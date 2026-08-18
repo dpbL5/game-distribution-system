@@ -10,6 +10,7 @@
 
 # next.js
 /.next/
+/.next-validation/
 /out/
 
 # production
@@ -34,3 +35,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local application data
+/storage/media/*
+!/storage/media/.gitkeep
+.eslintcache
+/playwright-report
+/test-results
+
+# local tooling
+/.commandcode/
+/.hallmark/
