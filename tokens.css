@@ -1,0 +1,102 @@
+/* Hallmark · genre: playful (restrained) · macrostructure: Catalogue + Workbench
+ * theme: custom · vibe: "console night, blue signal, loot amber"
+ * paper: oklch(97.58% 0.0057 264.53) · accent: oklch(54.61% 0.2152 262.88)
+ * display: Space Grotesk · body: Geist · axes: dark rails / geometric-sans / blue + amber
+ * pre-emit critique: P5 H5 E5 S5 R5 V5 · contrast: pass (40–41) · tokens: pass (48)
+ * design-system: design.md · designed-as-app · slop: pass · studied: no · context: explicit · v0.8.0
+ */
+
+:root {
+  /* User-supplied brand palette — exact sRGB equivalents are noted inline. */
+  --color-paper:        oklch(97.58% 0.0057 264.53); /* #F5F7FB · rgb(245 247 251) */
+  --color-paper-2:      oklch(94.64% 0.0143 254.61); /* #E7EEF7 · panel surface */
+  --color-paper-3:      oklch(91.07% 0.0220 250.22); /* #D7E3F0 · raised surface */
+  --color-accent:       oklch(54.61% 0.2152 262.88); /* #2563EB · console blue */
+  --color-amber:        oklch(78.19% 0.1585 72.33); /* #F5A524 · loot amber */
+
+  /* Cool semantic extensions. */
+  --color-ink:          oklch(18.31% 0.0309 263.38); /* #0B1220 · night navy */
+  --color-ink-2:        oklch(37.17% 0.0392 257.29); /* #334155 */
+  --color-muted:        oklch(49.22% 0.0434 258.35); /* #52627A */
+  --color-neutral:      oklch(37.17% 0.0392 257.29); /* #334155 */
+  --color-rule:         oklch(65.63% 0.0439 254.14); /* #7F93AC */
+  --color-rule-soft:    oklch(86.50% 0.0234 252.19); /* #C8D4E2 · quiet dividers */
+  --color-rule-2:       oklch(76.44% 0.0320 254.36); /* #A5B4C7 · secondary divider */
+  --color-accent-ink:   oklch(97.58% 0.0057 264.53); /* #F5F7FB · 4.82:1 on accent */
+  --color-amber-ink:    oklch(18.31% 0.0309 263.38); /* #0B1220 · 9.17:1 on amber */
+  --color-focus:        oklch(18.31% 0.0309 263.38); /* #0B1220 */
+  --color-success:      oklch(68.57% 0.1360 165.74); /* #20B486 */
+  --color-success-surface: oklch(95.04% 0.0371 164.08); /* #D9F7E8 */
+  --color-success-ink:  oklch(18.31% 0.0309 263.38); /* #0B1220 */
+  --color-warning:      oklch(55.38% 0.1207 66.44); /* #A16207 */
+  --color-danger:       oklch(50.03% 0.1821 29.51); /* #B42318 */
+
+  /* Named UI and game-art accents used by report-aligned Pencil screens. */
+  --color-sidebar:           oklch(25.83% 0.0573 260.87); /* #13233F */
+  --color-sidebar-raised:    oklch(34.70% 0.0645 258.28); /* #243A5B */
+  --color-sidebar-rule:      oklch(37.39% 0.0620 254.46); /* #294261 */
+  --color-warning-surface:   oklch(96.07% 0.0573 93.20); /* #FFF2C7 */
+  --color-warning-ink:       oklch(50.78% 0.1080 73.30); /* #8A5A00 */
+  --color-danger-surface:    oklch(93.94% 0.0288 22.95); /* #FEE4E2 */
+  --color-cover-deep:        oklch(30.04% 0.0729 260.18); /* #172D52 */
+  --color-cover-mid:         oklch(49.04% 0.0806 251.99); /* #3D638D */
+  --color-cover-plum:        oklch(35.46% 0.0848 345.97); /* #5A2745 */
+  --color-cover-teal:        oklch(39.26% 0.0533 186.15); /* #1E4F4A */
+  --color-cover-violet:      oklch(30.91% 0.1081 300.65); /* #3A1E5D */
+  --color-cover-slate:       oklch(42.03% 0.0635 262.12); /* #3A4D70 */
+  --color-cover-forest:      oklch(44.40% 0.0623 156.03); /* #355E45 */
+  --color-cover-magenta:     oklch(39.65% 0.1093 350.86); /* #70294E */
+
+  --font-display: var(--font-space-grotesk), "Space Grotesk", ui-sans-serif, sans-serif;
+  --font-body: var(--font-geist), "Geist", "Segoe UI", ui-sans-serif, sans-serif;
+  --font-outlier: var(--font-geist-mono), "Geist Mono", ui-monospace, monospace;
+  --display-weight: 700;
+  --display-style: normal;
+  --tracking-display: -0.025em;
+  --tracking-label: 0.06em;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-md: 1.25rem;
+  --text-lg: 1.5625rem;
+  --text-xl: 1.9531rem;
+  --text-2xl: 2.4414rem;
+  --text-display: clamp(2.75rem, 5vw + 1rem, 5.25rem);
+
+  --space-3xs: 0.25rem;
+  --space-2xs: 0.5rem;
+  --space-xs: 0.75rem;
+  --space-sm: 1rem;
+  --space-md: 1.5rem;
+  --space-lg: 2rem;
+  --space-xl: 3rem;
+  --space-2xl: 4.5rem;
+  --space-3xl: 7rem;
+  --space-4xl: 11rem;
+
+  --control-height: 2.75rem;
+  --radius-card: 10px;
+  --radius-hero: 16px;
+  --radius-input: 8px;
+  --radius-pill: 999px;
+  --rule-hair: 1px;
+  --rule-fine: 2px;
+  --shadow-card: 0 10px 24px -16px oklch(18.31% 0.0309 263.38 / 0.22);
+  --shadow-hero: 0 18px 34px -24px oklch(18.31% 0.0309 263.38 / 0.34);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms;
+  --dur-short: 220ms;
+  --dur-long: 420ms;
+
+  --z-base: 1;
+  --z-raised: 10;
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-modal: 400;
+  --z-toast: 500;
+  --z-tooltip: 600;
+}
