@@ -15,10 +15,13 @@ export type PublishedGameSummary = {
 };
 
 export type PublishedGameDetail = PublishedGameSummary & {
+  heroPath: string | null;
+  currentPrice: string;
+  discountPercent: string;
   description: string;
   platforms: string[];
   ageRating: string | null;
-  media: Array<{ id: string; type: string; path: string; title: string | null }>;
+  media: Array<{ id: string; type: string; path: string; previewPath: string | null; title: string | null }>;
   reviews: Array<{
     id: string;
     displayName: string;

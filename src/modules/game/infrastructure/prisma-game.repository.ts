@@ -6,6 +6,7 @@ import type {
   ListPublishedGamesInput,
   PagedGames,
 } from "@/modules/game/application/game.repository";
+import { calculateCurrentPrice, selectActivePromotion } from "@/modules/promotion/domain/pricing";
 import type { PublishedGameDetail, PublishedGameSummary } from "@/modules/game/domain/game.types";
 
 const DEFAULT_PAGE_SIZE = 12;
@@ -104,14 +105,18 @@ export class PrismaGameRepository implements GameRepository {
         basePrice: true,
         releaseDate: true,
         coverPath: true,
+        heroPath: true,
         ageRating: true,
         platforms: true,
         status: true,
         developer: { select: { name: true } },
         publisher: { select: { name: true } },
         categoryLinks: { select: { category: { select: { name: true } } } },
+        promotionLinks: {
+          select: { promotion: { select: { id: true, discountPercent: true, startsAt: true, endsAt: true, status: true } } },
+        },
         media: {
-          select: { id: true, type: true, path: true, title: true },
+          select: { id: true, type: true, path: true, previewPath: true, title: true },
           orderBy: { sortOrder: "asc" },
         },
         reviews: {
@@ -130,8 +135,21 @@ export class PrismaGameRepository implements GameRepository {
 
     if (!game) return null;
 
+    const promotions = game.promotionLinks.map((link) => ({
+      id: link.promotion.id,
+      discountPercent: link.promotion.discountPercent.toString(),
+      startsAt: link.promotion.startsAt,
+      endsAt: link.promotion.endsAt,
+      status: link.promotion.status,
+    }));
+    const active = selectActivePromotion(promotions as never[]);
+    const priced = calculateCurrentPrice(game.basePrice.toString(), active);
+
     return {
       ...toSummary(game),
+      heroPath: game.heroPath,
+      currentPrice: priced.price,
+      discountPercent: priced.discountPercent,
       description: game.description,
       platforms: game.platforms,
       ageRating: game.ageRating,

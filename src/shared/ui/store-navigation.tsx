@@ -58,9 +58,6 @@ const mobileLinks = {
   ],
 } as const;
 
-type LinkGroup = typeof desktopLinks.CUSTOMER;
-type MobileGroup = typeof mobileLinks.CUSTOMER;
-
 function isActivePath(pathname: string, href: string) {
   return href === "/" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 }
@@ -68,8 +65,8 @@ function isActivePath(pathname: string, href: string) {
 export function StoreNavigation({ user }: { user: NavigationUser }) {
   const pathname = usePathname();
   const role = user ? (user.role === "ADMIN" ? "ADMIN" : "CUSTOMER") : "GUEST";
-  const links: LinkGroup = desktopLinks[role];
-  const mobile: MobileGroup = mobileLinks[role];
+  const links = desktopLinks[role] as unknown as (typeof desktopLinks.CUSTOMER)[number][];
+  const mobile = mobileLinks[role] as unknown as (typeof mobileLinks.CUSTOMER)[number][];
 
   return (
     <>

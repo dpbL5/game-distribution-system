@@ -66,7 +66,7 @@ export default async function GamesPage({ searchParams }: GamesPageProps) {
         <div className="card-grid">
           {result.items.map((game) => (
             <article className="game-card" key={game.id}>
-              <GameCover name={game.name} />
+              <GameCover name={game.name} coverPath={game.coverPath} />
               <div className="game-info">
                 <span className="eyebrow">
                   {game.developerName} · {game.releaseDate.getFullYear()}
