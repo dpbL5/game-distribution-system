@@ -15,11 +15,15 @@ export async function loginAction(
   _previousState: AuthActionState,
   formData: FormData,
 ): Promise<AuthActionState> {
+  const next = String(formData.get("next") ?? "").trim();
+  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : null;
   try {
-    await authService.login({
+    const user = await authService.login({
       email: String(formData.get("email") ?? ""),
       password: String(formData.get("password") ?? ""),
     });
+    if (safeNext) redirect(safeNext);
+    if (user.role === "ADMIN") redirect("/admin");
   } catch (error) {
     return { error: errorMessage(error), success: null };
   }

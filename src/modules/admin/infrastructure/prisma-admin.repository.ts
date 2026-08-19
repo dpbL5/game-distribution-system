@@ -115,8 +115,14 @@ export class PrismaAdminRepository implements AdminRepository {
   async setGameStatus(
     gameId: string,
     status: "DRAFT" | "PUBLISHED" | "HIDDEN" | "ARCHIVED",
+    actorId?: string,
   ): Promise<void> {
     await prisma.game.update({ where: { id: gameId }, data: { status } });
+    if (actorId) {
+      await prisma.auditLog.create({
+        data: { actorId, action: "GAME_SET_STATUS", targetType: "Game", targetId: gameId, outcome: status },
+      });
+    }
   }
 
   async listPromotions() {
@@ -161,12 +167,17 @@ export class PrismaAdminRepository implements AdminRepository {
     });
   }
 
-  async setUserStatus(userId: string, status: "ACTIVE" | "LOCKED"): Promise<void> {
+  async setUserStatus(userId: string, status: "ACTIVE" | "LOCKED", actorId?: string): Promise<void> {
     await prisma.user.update({ where: { id: userId }, data: { status } });
     if (status === "LOCKED") {
       await prisma.session.updateMany({
         where: { userId, revokedAt: null },
         data: { revokedAt: new Date() },
+      });
+    }
+    if (actorId) {
+      await prisma.auditLog.create({
+        data: { actorId, action: status === "LOCKED" ? "USER_LOCK" : "USER_UNLOCK", targetType: "User", targetId: userId, outcome: status },
       });
     }
   }
@@ -222,8 +233,14 @@ export class PrismaAdminRepository implements AdminRepository {
   async setReviewVisibility(
     reviewId: string,
     visibilityStatus: "VISIBLE" | "HIDDEN",
+    actorId?: string,
   ): Promise<void> {
     await prisma.review.update({ where: { id: reviewId }, data: { visibilityStatus } });
+    if (actorId) {
+      await prisma.auditLog.create({
+        data: { actorId, action: "REVIEW_SET_VISIBILITY", targetType: "Review", targetId: reviewId, outcome: visibilityStatus },
+      });
+    }
   }
 }
 

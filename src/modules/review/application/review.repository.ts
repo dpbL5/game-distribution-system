@@ -11,7 +11,6 @@ export type ReviewRecord = {
 };
 
 export interface ReviewRepository {
-  isOwned(userId: string, gameId: string): Promise<boolean>;
   findByUserAndGame(userId: string, gameId: string): Promise<ReviewRecord | null>;
   create(input: {
     userId: string;

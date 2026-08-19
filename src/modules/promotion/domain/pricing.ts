@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Decimal } from "@/shared/money/decimal";
 
 export type PromotionCandidate = {
   id: string;
@@ -19,22 +19,24 @@ export function selectActivePromotion(
           promotion.status === "ACTIVE" && promotion.startsAt <= now && now < promotion.endsAt,
       )
       .sort((left, right) => {
-        const discountDifference = new Prisma.Decimal(right.discountPercent).minus(
+        const discountDifference = new Decimal(right.discountPercent).minus(
           left.discountPercent,
         );
         if (!discountDifference.isZero()) return discountDifference.isPositive() ? 1 : -1;
-        return left.startsAt.getTime() - right.startsAt.getTime();
+        const startDifference = left.startsAt.getTime() - right.startsAt.getTime();
+        if (startDifference !== 0) return startDifference;
+        return left.id < right.id ? -1 : left.id > right.id ? 1 : 0;
       })[0] ?? null
   );
 }
 
 export function calculateCurrentPrice(basePrice: string, promotion: PromotionCandidate | null) {
-  const base = new Prisma.Decimal(basePrice);
+  const base = new Decimal(basePrice);
   const discountPercent = promotion
-    ? new Prisma.Decimal(promotion.discountPercent)
-    : new Prisma.Decimal(0);
+    ? new Decimal(promotion.discountPercent)
+    : new Decimal(0);
   const price = base
-    .mul(new Prisma.Decimal(100).minus(discountPercent))
+    .mul(new Decimal(100).minus(discountPercent))
     .div(100)
     .toDecimalPlaces(2);
 

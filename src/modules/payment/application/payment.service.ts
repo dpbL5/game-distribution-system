@@ -6,6 +6,7 @@ import { getEnvironment } from "@/infrastructure/config/env";
 import { requireUser } from "@/modules/auth/application/guards";
 import type { PaymentGateway } from "./payment-gateway";
 import type { PaymentRepository } from "./payment.repository";
+import { Decimal } from "@/shared/money/decimal";
 import { AppError } from "@/shared/errors/app-error";
 
 export class PaymentService {
@@ -51,7 +52,7 @@ export class PaymentService {
     const callback = this.gateway.verifyCallback(payload, signature);
     const order = await this.repository.findOrder(callback.orderId);
     if (!order) throw new AppError("ORDER_NOT_FOUND", "Không tìm thấy đơn hàng.", 404);
-    if (callback.amount !== order.grandTotal) {
+    if (!new Decimal(callback.amount).equals(new Decimal(order.grandTotal))) {
       throw new AppError(
         "PAYMENT_AMOUNT_MISMATCH",
         "Số tiền thanh toán không khớp với đơn hàng.",

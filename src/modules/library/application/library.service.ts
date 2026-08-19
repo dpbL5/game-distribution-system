@@ -10,4 +10,8 @@ export class LibraryService {
     const user = await requireUser();
     return this.repository.listForUser(user.id);
   }
+
+  ownsGame(userId: string, gameId: string): Promise<boolean> {
+    return this.repository.ownsGame(userId, gameId);
+  }
 }

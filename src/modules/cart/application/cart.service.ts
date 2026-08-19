@@ -1,9 +1,9 @@
 import "server-only";
 
-import { Prisma } from "@prisma/client";
-
 import { requireUser } from "@/modules/auth/application/guards";
-import { calculateCurrentPrice, selectActivePromotion } from "@/modules/promotion/domain/pricing";
+import { libraryService } from "@/modules/library";
+import { calculateCurrentPrice, selectActivePromotion } from "@/modules/promotion";
+import { Decimal } from "@/shared/money/decimal";
 import { AppError } from "@/shared/errors/app-error";
 import type { CartRepository } from "./cart.repository";
 
@@ -30,7 +30,7 @@ export class CartService {
       };
     });
     const subtotal = lines
-      .reduce((total, line) => total.plus(line.currentPrice), new Prisma.Decimal(0))
+      .reduce((total, line) => total.plus(line.currentPrice), new Decimal(0))
       .toFixed(2);
     return { items: lines, subtotal };
   }
@@ -39,7 +39,7 @@ export class CartService {
     const user = await requireUser();
     const game = await this.repository.findPublishedGame(gameId);
     if (!game) throw new AppError("GAME_NOT_AVAILABLE", "Game hiện không khả dụng.", 409);
-    if (await this.repository.isOwned(user.id, gameId)) {
+    if (await libraryService.ownsGame(user.id, gameId)) {
       throw new AppError("GAME_ALREADY_OWNED", "Game đã có trong thư viện của bạn.", 409);
     }
     const price = calculateCurrentPrice(game.basePrice, selectActivePromotion(game.promotions));

@@ -49,13 +49,20 @@ export default async function StoreHomePage() {
         <div className="card-grid">
           {games.items.slice(0, 3).map((game) => (
             <article className="game-card" key={game.id}>
-              <GameCover name={game.name} />
+              <GameCover name={game.name} coverPath={game.coverPath} />
               <div className="game-info">
                 <span className="eyebrow">{game.developerName}</span>
                 <h3>{game.name}</h3>
                 <p className="muted small clamp">{game.shortDescription}</p>
                 <div className="price-row">
-                  <span className="price">{formatMoney(game.basePrice)}</span>
+                  {game.discountPercent !== "0.00" ? (
+                    <span className="price">
+                      {formatMoney(game.currentPrice)}{" "}
+                      <span className="muted small price-strike">{formatMoney(game.basePrice)}</span>
+                    </span>
+                  ) : (
+                    <span className="price">{formatMoney(game.basePrice)}</span>
+                  )}
                   <Link className="button button-secondary" href={`/games/${game.slug}`}>
                     Xem chi tiết
                   </Link>

@@ -7,6 +7,12 @@ import type {
 } from "@/modules/library/application/library.repository";
 
 export class PrismaLibraryRepository implements LibraryRepository {
+  ownsGame(userId: string, gameId: string): Promise<boolean> {
+    return prisma.libraryItem
+      .findUnique({ where: { userId_gameId: { userId, gameId } }, select: { id: true } })
+      .then((item) => Boolean(item));
+  }
+
   listForUser(userId: string): Promise<LibraryItemRecord[]> {
     return prisma.libraryItem.findMany({
       where: { userId },

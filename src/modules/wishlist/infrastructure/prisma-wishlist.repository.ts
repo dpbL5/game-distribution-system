@@ -61,12 +61,6 @@ export class PrismaWishlistRepository implements WishlistRepository {
     return game ? toGameRecord(game) : null;
   }
 
-  async isOwned(userId: string, gameId: string): Promise<boolean> {
-    return Boolean(
-      await prisma.libraryItem.findUnique({ where: { userId_gameId: { userId, gameId } } }),
-    );
-  }
-
   async add(userId: string, gameId: string): Promise<void> {
     const wishlist = await prisma.wishlist.upsert({
       where: { userId },

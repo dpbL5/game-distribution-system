@@ -1,10 +1,10 @@
 import "server-only";
 
-import { Prisma } from "@prisma/client";
+import { Decimal } from "@/shared/money/decimal";
 
 import { getEnvironment } from "@/infrastructure/config/env";
 import { requireUser } from "@/modules/auth/application/guards";
-import { cartService } from "@/modules/cart/infrastructure/cart-service";
+import { cartService } from "@/modules/cart";
 import { AppError } from "@/shared/errors/app-error";
 import type { OrderRepository, PendingOrder } from "./order.repository";
 
@@ -41,16 +41,16 @@ export class OrderService {
       gameId: item.gameId,
       gameNameSnapshot: item.name,
       basePriceSnapshot: item.basePrice,
-      discountSnapshot: new Prisma.Decimal(item.basePrice).minus(item.currentPrice).toFixed(2),
+      discountSnapshot: new Decimal(item.basePrice).minus(item.currentPrice).toFixed(2),
       paidPrice: item.currentPrice,
     }));
     const subtotal = lines
-      .reduce((total, line) => total.plus(line.basePriceSnapshot), new Prisma.Decimal(0))
+      .reduce((total, line) => total.plus(line.basePriceSnapshot), new Decimal(0))
       .toFixed(2);
     const grandTotal = lines
-      .reduce((total, line) => total.plus(line.paidPrice), new Prisma.Decimal(0))
+      .reduce((total, line) => total.plus(line.paidPrice), new Decimal(0))
       .toFixed(2);
-    const discountTotal = new Prisma.Decimal(subtotal).minus(grandTotal).toFixed(2);
+    const discountTotal = new Decimal(subtotal).minus(grandTotal).toFixed(2);
 
     return this.repository.createPending({
       userId: user.id,
