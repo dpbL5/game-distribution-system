@@ -1,6 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/infrastructure/database/prisma";
+import { AppError } from "@/shared/errors/app-error";
 import type {
   AdminCategory,
   AdminDashboard,
@@ -91,11 +92,49 @@ export class PrismaAdminRepository implements AdminRepository {
     });
   }
 
+  async createDeveloper(input: { name: string; description?: string; website?: string; countryCode?: string }): Promise<void> {
+    await prisma.developer.create({ data: input });
+  }
+
+  async updateDeveloper(id: string, input: { name: string; description?: string; website?: string; countryCode?: string }): Promise<void> {
+    await prisma.developer.update({ where: { id }, data: input });
+  }
+
+  async deleteDeveloper(id: string, actorId?: string): Promise<void> {
+    const used = await prisma.game.count({ where: { developerId: id } });
+    if (used > 0) throw new AppError("FORBIDDEN", "Không thể xóa nhà phát triển còn game tham chiếu.", 409);
+    await prisma.developer.delete({ where: { id } });
+    if (actorId) {
+      await prisma.auditLog.create({
+        data: { actorId, action: "DEVELOPER_DELETE", targetType: "Developer", targetId: id, outcome: "DELETED" },
+      });
+    }
+  }
+
   listPublishers(): Promise<{ id: string; name: string }[]> {
     return prisma.publisher.findMany({
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     });
+  }
+
+  async createPublisher(input: { name: string; description?: string; website?: string; countryCode?: string }): Promise<void> {
+    await prisma.publisher.create({ data: input });
+  }
+
+  async updatePublisher(id: string, input: { name: string; description?: string; website?: string; countryCode?: string }): Promise<void> {
+    await prisma.publisher.update({ where: { id }, data: input });
+  }
+
+  async deletePublisher(id: string, actorId?: string): Promise<void> {
+    const used = await prisma.game.count({ where: { publisherId: id } });
+    if (used > 0) throw new AppError("FORBIDDEN", "Không thể xóa nhà phát hành còn game tham chiếu.", 409);
+    await prisma.publisher.delete({ where: { id } });
+    if (actorId) {
+      await prisma.auditLog.create({
+        data: { actorId, action: "PUBLISHER_DELETE", targetType: "Publisher", targetId: id, outcome: "DELETED" },
+      });
+    }
   }
 
   async createGame(input: {
@@ -152,6 +191,37 @@ export class PrismaAdminRepository implements AdminRepository {
     await prisma.promotion.create({ data: { ...input, status: "DRAFT" } });
   }
 
+  async updatePromotion(
+    id: string,
+    input: { name: string; discountPercent: string; startsAt: Date; endsAt: Date; description?: string },
+    actorId?: string,
+  ): Promise<void> {
+    await prisma.promotion.update({ where: { id }, data: input });
+    if (actorId) {
+      await prisma.auditLog.create({
+        data: { actorId, action: "PROMOTION_UPDATE", targetType: "Promotion", targetId: id, outcome: "UPDATED" },
+      });
+    }
+  }
+
+  async setPromotionStatus(id: string, status: "DRAFT" | "ACTIVE" | "STOPPED", actorId?: string): Promise<void> {
+    await prisma.promotion.update({ where: { id }, data: { status } });
+    if (actorId) {
+      await prisma.auditLog.create({
+        data: { actorId, action: "PROMOTION_SET_STATUS", targetType: "Promotion", targetId: id, outcome: status },
+      });
+    }
+  }
+
+  async deletePromotion(id: string, actorId?: string): Promise<void> {
+    await prisma.$transaction([prisma.gamePromotion.deleteMany({ where: { promotionId: id } }), prisma.promotion.delete({ where: { id } })]);
+    if (actorId) {
+      await prisma.auditLog.create({
+        data: { actorId, action: "PROMOTION_DELETE", targetType: "Promotion", targetId: id, outcome: "DELETED" },
+      });
+    }
+  }
+
   listUsers(): Promise<AdminUser[]> {
     return prisma.user.findMany({
       orderBy: { createdAt: "desc" },
@@ -165,6 +235,37 @@ export class PrismaAdminRepository implements AdminRepository {
         createdAt: true,
       },
     });
+  }
+
+  async updateUser(id: string, input: { displayName: string; role: "CUSTOMER" | "ADMIN" }, actorId?: string): Promise<void> {
+    await prisma.user.update({ where: { id }, data: { displayName: input.displayName, role: input.role } });
+    if (actorId) {
+      await prisma.auditLog.create({
+        data: { actorId, action: "USER_UPDATE", targetType: "User", targetId: id, outcome: input.role },
+      });
+    }
+  }
+
+  async deleteUser(id: string, actorId?: string): Promise<void> {
+    const orderCount = await prisma.order.count({ where: { userId: id } });
+    if (orderCount > 0) throw new AppError("FORBIDDEN", "Không thể xóa người dùng đã có đơn hàng.", 409);
+    await prisma.$transaction([
+      prisma.session.deleteMany({ where: { userId: id } }),
+      prisma.passwordResetToken.deleteMany({ where: { userId: id } }),
+      prisma.cartItem.deleteMany({ where: { cart: { userId: id } } }),
+      prisma.cart.deleteMany({ where: { userId: id } }),
+      prisma.wishlistItem.deleteMany({ where: { wishlist: { userId: id } } }),
+      prisma.wishlist.deleteMany({ where: { userId: id } }),
+      prisma.libraryItem.deleteMany({ where: { userId: id } }),
+      prisma.review.deleteMany({ where: { userId: id } }),
+      prisma.auditLog.deleteMany({ where: { actorId: id } }),
+      prisma.user.delete({ where: { id } }),
+    ]);
+    if (actorId) {
+      await prisma.auditLog.create({
+        data: { actorId, action: "USER_DELETE", targetType: "User", targetId: id, outcome: "DELETED" },
+      });
+    }
   }
 
   async setUserStatus(userId: string, status: "ACTIVE" | "LOCKED", actorId?: string): Promise<void> {

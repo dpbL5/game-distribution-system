@@ -1,5 +1,10 @@
 import { adminService } from "@/modules/admin/infrastructure/admin-service";
-import { createPromotionAction } from "@/modules/admin/presentation/actions";
+import {
+  createPromotionAction,
+  deletePromotionAction,
+  setPromotionStatusAction,
+  updatePromotionAction,
+} from "@/modules/admin/presentation/actions";
 import { StatusBadge } from "@/shared/ui/status-badge";
 import { formatStatus } from "@/shared/utils/format-status";
 
@@ -8,6 +13,11 @@ const statusTone: Record<string, "default" | "success" | "warning" | "danger" | 
   DRAFT: "info",
   STOPPED: "warning",
 };
+
+function toLocalInputValue(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
 
 export default async function AdminPromotionsPage() {
   const promotions = await adminService.promotions();
@@ -18,7 +28,7 @@ export default async function AdminPromotionsPage() {
           <span className="eyebrow">GIÁ BÁN</span>
           <h1>Khuyến mãi</h1>
           <p className="lede">
-            Tạo giảm giá theo thời gian; hệ thống chọn mức khuyến mãi hợp lệ cao nhất.
+            Tạo, sửa, đổi trạng thái và xóa khuyến mãi. Hệ thống chọn mức khuyến mãi hợp lệ cao nhất khi tính giá.
           </p>
         </div>
       </div>
@@ -65,12 +75,59 @@ export default async function AdminPromotionsPage() {
               <th>Kết thúc</th>
               <th>Game</th>
               <th>Trạng thái</th>
+              <th className="table-actions">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {promotions.map((promotion) => (
               <tr key={promotion.id}>
-                <td>{promotion.name}</td>
+                <td>
+                  <form className="stack" action={updatePromotionAction}>
+                    <input type="hidden" name="id" value={promotion.id} />
+                    <div className="field">
+                      <label htmlFor={`promo-name-${promotion.id}`}>Tên</label>
+                      <input id={`promo-name-${promotion.id}`} name="name" defaultValue={promotion.name} required />
+                    </div>
+                    <div className="admin-form-grid">
+                      <div className="field">
+                        <label htmlFor={`promo-discount-${promotion.id}`}>Giảm %</label>
+                        <input
+                          id={`promo-discount-${promotion.id}`}
+                          name="discountPercent"
+                          type="number"
+                          min="0"
+                          max="100"
+                          step="0.01"
+                          defaultValue={promotion.discountPercent}
+                          required
+                        />
+                      </div>
+                      <div className="field">
+                        <label htmlFor={`promo-start-${promotion.id}`}>Bắt đầu</label>
+                        <input
+                          id={`promo-start-${promotion.id}`}
+                          name="startsAt"
+                          type="datetime-local"
+                          defaultValue={toLocalInputValue(promotion.startsAt)}
+                          required
+                        />
+                      </div>
+                      <div className="field">
+                        <label htmlFor={`promo-end-${promotion.id}`}>Kết thúc</label>
+                        <input
+                          id={`promo-end-${promotion.id}`}
+                          name="endsAt"
+                          type="datetime-local"
+                          defaultValue={toLocalInputValue(promotion.endsAt)}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <button className="button button-secondary" type="submit">
+                      Lưu
+                    </button>
+                  </form>
+                </td>
                 <td>{promotion.discountPercent}%</td>
                 <td>{promotion.startsAt.toLocaleString("vi-VN")}</td>
                 <td>{promotion.endsAt.toLocaleString("vi-VN")}</td>
@@ -79,6 +136,33 @@ export default async function AdminPromotionsPage() {
                   <StatusBadge tone={statusTone[promotion.status] ?? "default"}>
                     {formatStatus(promotion.status)}
                   </StatusBadge>
+                </td>
+                <td className="table-actions">
+                  <div className="form-actions">
+                    {promotion.status !== "ACTIVE" ? (
+                      <form action={setPromotionStatusAction}>
+                        <input type="hidden" name="id" value={promotion.id} />
+                        <input type="hidden" name="status" value="ACTIVE" />
+                        <button className="button button-secondary" type="submit">
+                          Kích hoạt
+                        </button>
+                      </form>
+                    ) : (
+                      <form action={setPromotionStatusAction}>
+                        <input type="hidden" name="id" value={promotion.id} />
+                        <input type="hidden" name="status" value="STOPPED" />
+                        <button className="button button-secondary" type="submit">
+                          Dừng
+                        </button>
+                      </form>
+                    )}
+                    <form action={deletePromotionAction}>
+                      <input type="hidden" name="id" value={promotion.id} />
+                      <button className="button button-danger" type="submit">
+                        Xóa
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             ))}

@@ -65,7 +65,13 @@ export interface AdminRepository {
   createCategory(input: { name: string; slug: string; description?: string }): Promise<void>;
   listGames(): Promise<AdminGame[]>;
   listDevelopers(): Promise<AdminOption[]>;
+  createDeveloper(input: { name: string; description?: string; website?: string; countryCode?: string }): Promise<void>;
+  updateDeveloper(id: string, input: { name: string; description?: string; website?: string; countryCode?: string }): Promise<void>;
+  deleteDeveloper(id: string, actorId?: string): Promise<void>;
   listPublishers(): Promise<AdminOption[]>;
+  createPublisher(input: { name: string; description?: string; website?: string; countryCode?: string }): Promise<void>;
+  updatePublisher(id: string, input: { name: string; description?: string; website?: string; countryCode?: string }): Promise<void>;
+  deletePublisher(id: string, actorId?: string): Promise<void>;
   createGame(input: {
     name: string;
     slug: string;
@@ -91,7 +97,16 @@ export interface AdminRepository {
     endsAt: Date;
     description?: string;
   }): Promise<void>;
+  updatePromotion(
+    id: string,
+    input: { name: string; discountPercent: string; startsAt: Date; endsAt: Date; description?: string },
+    actorId?: string,
+  ): Promise<void>;
+  setPromotionStatus(id: string, status: "DRAFT" | "ACTIVE" | "STOPPED", actorId?: string): Promise<void>;
+  deletePromotion(id: string, actorId?: string): Promise<void>;
   listUsers(): Promise<AdminUser[]>;
+  updateUser(id: string, input: { displayName: string; role: "CUSTOMER" | "ADMIN" }, actorId?: string): Promise<void>;
+  deleteUser(id: string, actorId?: string): Promise<void>;
   setUserStatus(userId: string, status: "ACTIVE" | "LOCKED", actorId?: string): Promise<void>;
   listOrders(): Promise<AdminOrder[]>;
   listReviews(): Promise<AdminReview[]>;

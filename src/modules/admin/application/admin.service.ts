@@ -34,9 +34,47 @@ export class AdminService {
     return this.repository.listDevelopers();
   }
 
+  async createDeveloper(input: { name: string; description?: string; website?: string; countryCode?: string }) {
+    await requireAdmin();
+    const name = input.name.trim();
+    if (!name) throw new AppError("FORBIDDEN", "Tên nhà phát triển là bắt buộc.", 400);
+    return this.repository.createDeveloper({ ...input, name });
+  }
+
+  async updateDeveloper(id: string, input: { name: string; description?: string; website?: string; countryCode?: string }) {
+    await requireAdmin();
+    const name = input.name.trim();
+    if (!name) throw new AppError("FORBIDDEN", "Tên nhà phát triển là bắt buộc.", 400);
+    return this.repository.updateDeveloper(id, { ...input, name });
+  }
+
+  async deleteDeveloper(id: string) {
+    const admin = await requireAdmin();
+    return this.repository.deleteDeveloper(id, admin.id);
+  }
+
   async publishers() {
     await requireAdmin();
     return this.repository.listPublishers();
+  }
+
+  async createPublisher(input: { name: string; description?: string; website?: string; countryCode?: string }) {
+    await requireAdmin();
+    const name = input.name.trim();
+    if (!name) throw new AppError("FORBIDDEN", "Tên nhà phát hành là bắt buộc.", 400);
+    return this.repository.createPublisher({ ...input, name });
+  }
+
+  async updatePublisher(id: string, input: { name: string; description?: string; website?: string; countryCode?: string }) {
+    await requireAdmin();
+    const name = input.name.trim();
+    if (!name) throw new AppError("FORBIDDEN", "Tên nhà phát hành là bắt buộc.", 400);
+    return this.repository.updatePublisher(id, { ...input, name });
+  }
+
+  async deletePublisher(id: string) {
+    const admin = await requireAdmin();
+    return this.repository.deletePublisher(id, admin.id);
   }
 
   async createGame(input: Parameters<AdminRepository["createGame"]>[0]) {
@@ -60,6 +98,26 @@ export class AdminService {
     const admin = await requireAdmin();
     this.assertValidPromotion(input);
     return this.repository.createPromotion({ ...input, createdById: admin.id });
+  }
+
+  async updatePromotion(
+    id: string,
+    input: { name: string; discountPercent: string; startsAt: Date; endsAt: Date; description?: string },
+  ) {
+    const admin = await requireAdmin();
+    this.assertValidPromotion(input);
+    if (!input.name.trim()) throw new AppError("PROMOTION_INVALID", "Tên khuyến mãi là bắt buộc.", 422);
+    return this.repository.updatePromotion(id, { ...input, name: input.name.trim() }, admin.id);
+  }
+
+  async setPromotionStatus(id: string, status: "DRAFT" | "ACTIVE" | "STOPPED") {
+    const admin = await requireAdmin();
+    return this.repository.setPromotionStatus(id, status, admin.id);
+  }
+
+  async deletePromotion(id: string) {
+    const admin = await requireAdmin();
+    return this.repository.deletePromotion(id, admin.id);
   }
 
   /**
@@ -101,6 +159,20 @@ export class AdminService {
   async users() {
     await requireAdmin();
     return this.repository.listUsers();
+  }
+
+  async updateUser(id: string, input: { displayName: string; role: "CUSTOMER" | "ADMIN" }) {
+    const admin = await requireAdmin();
+    const displayName = input.displayName.trim();
+    if (!displayName) throw new AppError("FORBIDDEN", "Tên hiển thị là bắt buộc.", 400);
+    if (!["CUSTOMER", "ADMIN"].includes(input.role)) throw new AppError("FORBIDDEN", "Vai trò không hợp lệ.", 400);
+    return this.repository.updateUser(id, { displayName, role: input.role }, admin.id);
+  }
+
+  async deleteUser(id: string) {
+    const admin = await requireAdmin();
+    if (id === admin.id) throw new AppError("FORBIDDEN", "Không thể tự xóa tài khoản của chính mình.", 403);
+    return this.repository.deleteUser(id, admin.id);
   }
 
   async setUserStatus(userId: string, status: "ACTIVE" | "LOCKED") {
