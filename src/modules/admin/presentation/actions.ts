@@ -96,20 +96,24 @@ export async function setReviewVisibilityAction(formData: FormData): Promise<voi
 }
 
 export async function createGameAction(formData: FormData): Promise<void> {
-  await adminService.createGame({
+  const { createGameSchema } = await import("@/shared/validation/game");
+  const parsed = createGameSchema.parse({
     name: stringField(formData, "name"),
     slug: stringField(formData, "slug"),
     shortDescription: stringField(formData, "shortDescription"),
     description: stringField(formData, "description"),
     basePrice: stringField(formData, "basePrice") || "0",
-    releaseDate: new Date(stringField(formData, "releaseDate")),
-    platforms: stringField(formData, "platforms")
-      .split(",")
-      .map((platform) => platform.trim())
-      .filter(Boolean),
+    releaseDate: stringField(formData, "releaseDate") || new Date().toISOString(),
+    platforms: stringField(formData, "platforms"),
     developerId: stringField(formData, "developerId"),
     publisherId: stringField(formData, "publisherId"),
+    heroPath: stringField(formData, "heroPath") || null,
+    ageRating: stringField(formData, "ageRating") || null,
+    minimumRequirements: undefined,
+    recommendedRequirements: undefined,
+    categoryIds: formData.getAll("categoryIds").map((value) => String(value)).filter(Boolean),
   });
+  await adminService.createGame(parsed);
   revalidatePath("/admin/games");
 }
 
@@ -127,6 +131,8 @@ export async function updateGameAction(formData: FormData): Promise<void> {
       mimeType: coverFile.type || "image/jpeg",
     });
     coverPath = stored.path;
+  } else if (formData.has("coverPath")) {
+    coverPath = stringField(formData, "coverPath") || null;
   }
   const heroFile = formData.get("heroFile");
   if (heroFile instanceof File && heroFile.size > 0) {
@@ -136,28 +142,30 @@ export async function updateGameAction(formData: FormData): Promise<void> {
       mimeType: heroFile.type || "image/jpeg",
     });
     heroPath = stored.path;
+  } else if (formData.has("heroPath")) {
+    heroPath = stringField(formData, "heroPath") || null;
   }
 
-  await adminService.updateGame(id, {
+  const { updateGameSchema } = await import("@/shared/validation/game");
+  const parsed = updateGameSchema.parse({
     name: stringField(formData, "name") || undefined,
     slug: stringField(formData, "slug") || undefined,
     shortDescription: stringField(formData, "shortDescription") || undefined,
     description: stringField(formData, "description") || undefined,
     basePrice: stringField(formData, "basePrice") || undefined,
-    releaseDate: stringField(formData, "releaseDate") ? new Date(stringField(formData, "releaseDate")) : undefined,
-    platforms: formData.has("platforms")
-      ? stringField(formData, "platforms")
-          .split(",")
-          .map((value) => value.trim())
-          .filter(Boolean)
-      : undefined,
+    releaseDate: stringField(formData, "releaseDate") || undefined,
+    platforms: formData.has("platforms") ? stringField(formData, "platforms") : undefined,
     developerId: stringField(formData, "developerId") || undefined,
     publisherId: stringField(formData, "publisherId") || undefined,
     ageRating: formData.has("ageRating") ? stringField(formData, "ageRating") || null : undefined,
-    coverPath,
     heroPath,
+    coverPath,
     categoryIds: formData.has("categoryIds") ? categoryIds : undefined,
+    minimumRequirements: undefined,
+    recommendedRequirements: undefined,
+    status: stringField(formData, "status") || undefined,
   });
+  await adminService.updateGame(id, parsed);
   revalidatePath("/admin/games");
   revalidatePath(`/admin/games/${id}`);
   revalidatePath("/games");
@@ -260,4 +268,27 @@ export async function deletePromotionAction(formData: FormData): Promise<void> {
   await adminService.deletePromotion(stringField(formData, "id"));
   revalidatePath("/admin/promotions");
   redirect("/admin/promotions");
+}
+
+export async function updateUserAction(formData: FormData): Promise<void> {
+  await adminService.updateUser(stringField(formData, "userId"), {
+    displayName: stringField(formData, "displayName"),
+    role: stringField(formData, "role") === "ADMIN" ? "ADMIN" : "CUSTOMER",
+  });
+  revalidatePath("/admin/users");
+}
+
+export async function deleteUserAction(formData: FormData): Promise<void> {
+  await adminService.deleteUser(stringField(formData, "userId"));
+  revalidatePath("/admin/users");
+}
+
+export async function adminCompletePaymentAction(formData: FormData): Promise<void> {
+  const { paymentService } = await import("@/modules/payment/infrastructure/payment-service");
+  const orderId = stringField(formData, "orderId");
+  const approved = stringField(formData, "approved") === "true" || stringField(formData, "decision") === "approve";
+  if (!orderId) return;
+  await paymentService.adminCompleteMock(orderId, approved);
+  revalidatePath("/admin/orders");
+  revalidatePath("/orders");
 }

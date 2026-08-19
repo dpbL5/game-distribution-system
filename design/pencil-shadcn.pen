@@ -14358,7 +14358,8 @@
                   "fill": "$brand-muted",
                   "content": "Một header storefront, một header xác thực và một sidebar quản trị dùng xuyên suốt toàn bộ sản phẩm.",
                   "fontFamily": "$font-body-brand",
-                  "fontSize": 14
+                  "fontSize": 14,
+                  "fontWeight": "normal"
                 },
                 {
                   "id": "y19BK",
@@ -14441,7 +14442,8 @@
                               "content": "Header 76px, tìm kiếm là trọng tâm; action 44px và không đổi vị trí giữa các màn hình đã đăng nhập.",
                               "lineHeight": 1.5,
                               "fontFamily": "$font-body-brand",
-                              "fontSize": 14
+                              "fontSize": 14,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -14471,7 +14473,8 @@
                               "content": "Giữ cùng nhận diện nhưng giảm chrome; chỉ duy trì điều hướng cửa hàng và hành động đăng nhập.",
                               "lineHeight": 1.5,
                               "fontFamily": "$font-body-brand",
-                              "fontSize": 14
+                              "fontSize": 14,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -14501,7 +14504,8 @@
                               "content": "Sidebar 256px, active state xanh lam; workspace sáng, bảng và filter dùng cùng nhịp 44px.",
                               "lineHeight": 1.5,
                               "fontFamily": "$font-body-brand",
-                              "fontSize": 14
+                              "fontSize": 14,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -14531,7 +14535,8 @@
                               "content": "Xanh lam = quyết định · Hổ phách = ưu đãi · Xanh lá = sở hữu/hoàn tất · Đỏ = lỗi hoặc hành động phá hủy.",
                               "lineHeight": 1.5,
                               "fontFamily": "$font-body-brand",
-                              "fontSize": 14
+                              "fontSize": 14,
+                              "fontWeight": "normal"
                             }
                           ]
                         }

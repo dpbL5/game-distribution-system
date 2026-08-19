@@ -21,6 +21,17 @@ export type AdminGame = {
   basePrice: string;
   developer: string;
   publisher: string;
+  releaseDate: Date;
+  platforms: string[];
+  ageRating: string | null;
+  coverPath: string | null;
+  heroPath: string | null;
+  updatedAt: Date;
+  createdAt: Date;
+  minimumRequirements: unknown | null;
+  recommendedRequirements: unknown | null;
+  categoryNames: string[];
+  mediaCount: number;
 };
 export type AdminUser = {
   id: string;
@@ -72,12 +83,16 @@ export type AdminGameDetail = {
   ageRating: string | null;
   status: string;
   platforms: string[];
+  minimumRequirements: unknown | null;
+  recommendedRequirements: unknown | null;
   developerId: string;
   publisherId: string;
   developer: string;
   publisher: string;
   categories: AdminOption[];
   media: Array<{ id: string; type: string; path: string; title: string | null; sortOrder: number }>;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 export type AdminCategoryDetail = AdminCategory & {
@@ -122,12 +137,20 @@ export type CreateGameInput = {
   platforms: string[];
   developerId: string;
   publisherId: string;
+  heroPath?: string | null;
+  ageRating?: string | null;
+  minimumRequirements?: unknown | null;
+  recommendedRequirements?: unknown | null;
+  categoryIds?: string[];
 };
 
 export type UpdateGameInput = Partial<CreateGameInput> & {
+  // kept explicit for backwards-compat: repository/service already use these optionals
   ageRating?: string | null;
   coverPath?: string | null;
   heroPath?: string | null;
+  minimumRequirements?: unknown | null;
+  recommendedRequirements?: unknown | null;
   categoryIds?: string[];
   status?: "DRAFT" | "PUBLISHED" | "HIDDEN" | "ARCHIVED";
 };
@@ -179,6 +202,8 @@ export interface AdminRepository {
   setPromotionGames(id: string, gameIds: string[]): Promise<void>;
   deletePromotion(id: string): Promise<void>;
   listUsers(): Promise<AdminUser[]>;
+  updateUser(id: string, input: { displayName: string; role: "CUSTOMER" | "ADMIN" }): Promise<void>;
+  deleteUser(id: string): Promise<void>;
   setUserStatus(userId: string, status: "ACTIVE" | "LOCKED", actorId?: string): Promise<void>;
   listOrders(): Promise<AdminOrder[]>;
   listReviews(): Promise<AdminReview[]>;

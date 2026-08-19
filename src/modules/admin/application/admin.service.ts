@@ -229,6 +229,20 @@ export class AdminService {
     return this.repository.listUsers();
   }
 
+  async updateUser(userId: string, input: { displayName: string; role: "CUSTOMER" | "ADMIN" }) {
+    await requireAdmin();
+    if (!input.displayName || input.displayName.trim().length < 2) throw new AppError("FORBIDDEN", "Tên hiển thị phải có ít nhất 2 ký tự.", 422);
+    if (!["CUSTOMER", "ADMIN"].includes(input.role)) throw new AppError("FORBIDDEN", "Vai trò không hợp lệ.", 422);
+    return this.repository.updateUser(userId, input);
+  }
+
+  async deleteUser(userId: string) {
+    await requireAdmin();
+    const admin = await requireAdmin();
+    if (userId === admin.id) throw new AppError("FORBIDDEN", "Không thể tự xóa tài khoản của chính mình.", 403);
+    return this.repository.deleteUser(userId);
+  }
+
   async setUserStatus(userId: string, status: "ACTIVE" | "LOCKED") {
     const admin = await requireAdmin();
     if (userId === admin.id) {
