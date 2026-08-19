@@ -22,6 +22,31 @@ export type AdminGame = {
   developer: string;
   publisher: string;
 };
+export type AdminGameEditor = AdminGame & {
+  shortDescription: string;
+  description: string;
+  releaseDate: Date;
+  platforms: string[];
+  ageRating: string | null;
+  coverPath: string | null;
+  developerId: string;
+  publisherId: string;
+  categoryIds: string[];
+};
+export type AdminGameUpdateInput = {
+  name: string;
+  slug: string;
+  shortDescription: string;
+  description: string;
+  basePrice: string;
+  releaseDate: Date;
+  platforms: string[];
+  ageRating: string | null;
+  developerId: string;
+  publisherId: string;
+  status: "DRAFT" | "PUBLISHED" | "HIDDEN" | "ARCHIVED";
+  categoryIds: string[];
+};
 export type AdminUser = {
   id: string;
   username: string;
@@ -49,6 +74,15 @@ export type AdminReview = {
   createdAt: Date;
 };
 export type AdminOption = { id: string; name: string };
+export type AdminGameMedia = {
+  id: string;
+  type: string;
+  path: string;
+  title: string | null;
+  sortOrder: number;
+  isCover: boolean;
+  createdAt: Date;
+};
 export type AdminPromotion = {
   id: string;
   name: string;
@@ -64,6 +98,11 @@ export interface AdminRepository {
   listCategories(): Promise<AdminCategory[]>;
   createCategory(input: { name: string; slug: string; description?: string }): Promise<void>;
   listGames(): Promise<AdminGame[]>;
+  findGameForEdit(gameId: string): Promise<AdminGameEditor | null>;
+  updateGame(gameId: string, input: AdminGameUpdateInput, actorId?: string): Promise<void>;
+  listGameMedia(gameId: string): Promise<AdminGameMedia[]>;
+  setGameCover(gameId: string, mediaId: string): Promise<void>;
+  deleteGameMedia(mediaId: string, actorId?: string): Promise<void>;
   listDevelopers(): Promise<AdminOption[]>;
   createDeveloper(input: { name: string; description?: string; website?: string; countryCode?: string }): Promise<void>;
   updateDeveloper(id: string, input: { name: string; description?: string; website?: string; countryCode?: string }): Promise<void>;

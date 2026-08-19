@@ -1,11 +1,15 @@
 import "server-only";
 
 import { prisma } from "@/infrastructure/database/prisma";
+import { localMediaStorage } from "@/infrastructure/storage/local-media-storage";
 import { AppError } from "@/shared/errors/app-error";
 import type {
   AdminCategory,
   AdminDashboard,
   AdminGame,
+  AdminGameEditor,
+  AdminGameMedia,
+  AdminGameUpdateInput,
   AdminOrder,
   AdminRepository,
   AdminReview,
@@ -83,6 +87,128 @@ export class PrismaAdminRepository implements AdminRepository {
       developer: game.developer.name,
       publisher: game.publisher.name,
     }));
+  }
+
+  async findGameForEdit(gameId: string): Promise<AdminGameEditor | null> {
+    const game = await prisma.game.findUnique({
+      where: { id: gameId },
+      include: {
+        developer: { select: { id: true, name: true } },
+        publisher: { select: { id: true, name: true } },
+        categoryLinks: { select: { categoryId: true } },
+      },
+    });
+    if (!game) return null;
+    return {
+      id: game.id,
+      name: game.name,
+      slug: game.slug,
+      shortDescription: game.shortDescription,
+      description: game.description,
+      basePrice: game.basePrice.toFixed(2),
+      releaseDate: game.releaseDate,
+      platforms: game.platforms,
+      ageRating: game.ageRating,
+      coverPath: game.coverPath,
+      status: game.status,
+      developer: game.developer.name,
+      publisher: game.publisher.name,
+      developerId: game.developer.id,
+      publisherId: game.publisher.id,
+      categoryIds: game.categoryLinks.map((link) => link.categoryId),
+    };
+  }
+
+  async updateGame(
+    gameId: string,
+    input: AdminGameUpdateInput,
+    actorId?: string,
+  ): Promise<void> {
+    await prisma.$transaction([
+      prisma.game.update({
+        where: { id: gameId },
+        data: {
+          name: input.name,
+          slug: input.slug,
+          shortDescription: input.shortDescription,
+          description: input.description,
+          basePrice: input.basePrice,
+          releaseDate: input.releaseDate,
+          platforms: input.platforms,
+          ageRating: input.ageRating,
+          developerId: input.developerId,
+          publisherId: input.publisherId,
+          status: input.status,
+        },
+      }),
+      prisma.gameCategory.deleteMany({ where: { gameId } }),
+      ...input.categoryIds.map((categoryId) =>
+        prisma.gameCategory.create({ data: { gameId, categoryId } }),
+      ),
+    ]);
+    if (actorId) {
+      await prisma.auditLog.create({
+        data: {
+          actorId,
+          action: "GAME_UPDATE",
+          targetType: "Game",
+          targetId: gameId,
+          outcome: input.status,
+        },
+      });
+    }
+  }
+
+  async listGameMedia(gameId: string): Promise<AdminGameMedia[]> {
+    const game = await prisma.game.findUnique({
+      where: { id: gameId },
+      select: { id: true, coverPath: true },
+    });
+    if (!game) throw new AppError("GAME_NOT_FOUND", "Không tìm thấy game.", 404);
+    const media = await prisma.gameMedia.findMany({
+      where: { gameId },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    });
+    return media.map((item) => ({
+      id: item.id,
+      type: item.type,
+      path: item.path,
+      title: item.title,
+      sortOrder: item.sortOrder,
+      isCover: item.path === game.coverPath,
+      createdAt: item.createdAt,
+    }));
+  }
+
+  async setGameCover(gameId: string, mediaId: string): Promise<void> {
+    const media = await prisma.gameMedia.findFirst({ where: { id: mediaId, gameId } });
+    if (!media) throw new AppError("GAME_NOT_FOUND", "Không tìm thấy media của game.", 404);
+    await prisma.game.update({ where: { id: gameId }, data: { coverPath: media.path } });
+  }
+
+  async deleteGameMedia(mediaId: string, actorId?: string): Promise<void> {
+    const media = await prisma.gameMedia.findUnique({ where: { id: mediaId } });
+    if (!media) throw new AppError("GAME_NOT_FOUND", "Không tìm thấy media.", 404);
+    await localMediaStorage.delete(media.path);
+    if (media.previewPath) await localMediaStorage.delete(media.previewPath);
+    await prisma.$transaction([
+      prisma.gameMedia.delete({ where: { id: mediaId } }),
+      prisma.game.updateMany({
+        where: { coverPath: media.path },
+        data: { coverPath: null },
+      }),
+    ]);
+    if (actorId) {
+      await prisma.auditLog.create({
+        data: {
+          actorId,
+          action: "GAME_MEDIA_DELETE",
+          targetType: "GameMedia",
+          targetId: mediaId,
+          outcome: "DELETED",
+        },
+      });
+    }
   }
 
   listDevelopers(): Promise<{ id: string; name: string }[]> {

@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { adminService } from "@/modules/admin/infrastructure/admin-service";
 import { createGameAction, setGameStatusAction } from "@/modules/admin/presentation/actions";
 import { StatusBadge } from "@/shared/ui/status-badge";
@@ -136,17 +138,22 @@ export default async function AdminGamesPage() {
                   </StatusBadge>
                 </td>
                 <td className="table-actions">
-                  <form action={setGameStatusAction}>
-                    <input type="hidden" name="gameId" value={game.id} />
-                    <input
-                      type="hidden"
-                      name="status"
-                      value={game.status === "PUBLISHED" ? "HIDDEN" : "PUBLISHED"}
-                    />
-                    <button className="button button-secondary" type="submit">
-                      {game.status === "PUBLISHED" ? "Ẩn" : "Phát hành"}
-                    </button>
-                  </form>
+                  <div className="form-actions">
+                    <Link className="button button-secondary" href={`/admin/games/${game.id}`}>
+                      Sửa
+                    </Link>
+                    <form action={setGameStatusAction}>
+                      <input type="hidden" name="gameId" value={game.id} />
+                      <input
+                        type="hidden"
+                        name="status"
+                        value={game.status === "PUBLISHED" ? "HIDDEN" : "PUBLISHED"}
+                      />
+                      <button className="button button-secondary" type="submit">
+                        {game.status === "PUBLISHED" ? "Ẩn" : "Phát hành"}
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             ))}

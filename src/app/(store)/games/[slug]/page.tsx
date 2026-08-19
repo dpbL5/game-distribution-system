@@ -7,6 +7,7 @@ import { gameService } from "@/modules/game";
 import { addToWishlistAction } from "@/modules/wishlist/presentation/actions";
 import { createReviewAction, deleteReviewAction } from "@/modules/review/presentation/actions";
 import { GameCover } from "@/shared/ui/game-cover";
+import { MediaSlideshow } from "@/shared/ui/media-slideshow";
 import { StatusBadge } from "@/shared/ui/status-badge";
 import { formatMoney } from "@/shared/utils/format-money";
 
@@ -22,42 +23,68 @@ export default async function GameDetailPage({ params }: { params: Promise<{ slu
     <main className="main-shell">
       <div className="two-col">
         <article className="stack">
-          <GameCover name={game.name} className="game-detail-cover" role="img" label={`Ảnh bìa ${game.name}`} />
+          {game.media.length > 0 ? (
+            <MediaSlideshow items={game.media} />
+          ) : (
+            <GameCover
+              name={game.name}
+              className="game-detail-cover"
+              role="img"
+              label={`Ảnh bìa ${game.name}`}
+            />
+          )}
           <section className="panel stack">
             <span className="eyebrow">CHI TIẾT GAME</span>
             <h1>{game.name}</h1>
-            {game.categories.length > 0 ? (
-              <div className="tag-row">
-                {game.categories.map((category) => (
-                  <span className="tag" key={category}>
-                    {category}
-                  </span>
-                ))}
-              </div>
-            ) : null}
             <p className="muted">{game.shortDescription}</p>
             <p>{game.description}</p>
-            <p className="muted small">
-              {game.developerName} · {game.publisherName} · {game.platforms.join(", ")}
-            </p>
           </section>
         </article>
-        <aside className="panel stack">
-          <span className="eyebrow">GIÁ HIỆN TẠI</span>
-          {game.discountPercent !== "0.00" ? (
-            <div className="price-row">
-              <h2>{formatMoney(game.currentPrice)}</h2>
-              <span className="muted small price-strike">{formatMoney(game.basePrice)}</span>
+        <aside className="panel stack purchase-panel">
+          {game.categories.length > 0 ? (
+            <div className="tag-row">
+              {game.categories.map((category) => (
+                <span className="tag" key={category}>
+                  {category}
+                </span>
+              ))}
             </div>
-          ) : (
-            <h2>{formatMoney(game.currentPrice)}</h2>
-          )}
-          {game.discountPercent !== "0.00" ? (
-            <p className="muted small">Giảm {game.discountPercent}% so với giá gốc</p>
           ) : null}
-          <p className="muted">
+
+          <div className="purchase-price">
+            <span className="eyebrow">GIÁ HIỆN TẠI</span>
+            <div className="purchase-price-row">
+              {game.discountPercent !== "0.00" ? (
+                <>
+                  <span className="price-badge">-{game.discountPercent}%</span>
+                  <h2>{formatMoney(game.currentPrice)}</h2>
+                  <span className="muted small price-strike">{formatMoney(game.basePrice)}</span>
+                </>
+              ) : (
+                <h2>{formatMoney(game.currentPrice)}</h2>
+              )}
+            </div>
+          </div>
+
+          <p className="muted small">
             Giá gốc và khuyến mãi đang áp dụng được xác nhận tại máy chủ khi thanh toán.
           </p>
+
+          <dl className="studio-list">
+            <div>
+              <dt>Nhà phát triển</dt>
+              <dd>{game.developerName}</dd>
+            </div>
+            <div>
+              <dt>Nhà phát hành</dt>
+              <dd>{game.publisherName}</dd>
+            </div>
+            <div>
+              <dt>Nền tảng</dt>
+              <dd>{game.platforms.join(", ")}</dd>
+            </div>
+          </dl>
+
           {game.isOwned ? (
             <div className="stack">
               <p className="muted small">Bạn đã sở hữu game này.</p>
@@ -69,13 +96,13 @@ export default async function GameDetailPage({ params }: { params: Promise<{ slu
             <>
               <form action={addToCartAction}>
                 <input type="hidden" name="gameId" value={game.id} />
-                <button className="button button-primary" type="submit">
+                <button className="button button-primary purchase-cta" type="submit">
                   Thêm vào giỏ
                 </button>
               </form>
               <form action={addToWishlistAction}>
                 <input type="hidden" name="gameId" value={game.id} />
-                <button className="button button-secondary" type="submit">
+                <button className="button button-secondary purchase-cta" type="submit">
                   Thêm vào yêu thích
                 </button>
               </form>

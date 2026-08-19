@@ -138,6 +138,58 @@ export async function setGameStatusAction(formData: FormData): Promise<void> {
   revalidatePath("/games");
 }
 
+export async function setGameCoverAction(formData: FormData): Promise<void> {
+  const gameId = String(formData.get("gameId") ?? "").trim();
+  const mediaId = String(formData.get("mediaId") ?? "").trim();
+  if (!gameId || !mediaId) return;
+  await adminService.setGameCover(gameId, mediaId);
+  revalidatePath("/admin/games");
+  revalidatePath(`/admin/games/${gameId}`);
+  revalidatePath("/games");
+  revalidatePath(`/games/${String(formData.get("slug") ?? "")}`);
+}
+
+export async function deleteGameMediaAction(formData: FormData): Promise<void> {
+  const gameId = String(formData.get("gameId") ?? "").trim();
+  const mediaId = String(formData.get("mediaId") ?? "").trim();
+  if (!gameId || !mediaId) return;
+  await adminService.deleteGameMedia(mediaId);
+  revalidatePath(`/admin/games/${gameId}`);
+  revalidatePath("/admin/games");
+  revalidatePath("/games");
+}
+
+export async function updateGameAction(formData: FormData): Promise<void> {
+  const gameId = String(formData.get("gameId") ?? "").trim();
+  if (!gameId) return;
+  const status = String(formData.get("status") ?? "DRAFT");
+  if (!["DRAFT", "PUBLISHED", "HIDDEN", "ARCHIVED"].includes(status)) return;
+  await adminService.updateGame(gameId, {
+    name: String(formData.get("name") ?? "").trim(),
+    slug: String(formData.get("slug") ?? "").trim(),
+    shortDescription: String(formData.get("shortDescription") ?? "").trim(),
+    description: String(formData.get("description") ?? "").trim(),
+    basePrice: String(formData.get("basePrice") ?? "0"),
+    releaseDate: new Date(String(formData.get("releaseDate") ?? "")),
+    platforms: String(formData.get("platforms") ?? "PC")
+      .split(",")
+      .map((platform) => platform.trim())
+      .filter(Boolean),
+    ageRating: String(formData.get("ageRating") ?? "").trim() || null,
+    developerId: String(formData.get("developerId") ?? ""),
+    publisherId: String(formData.get("publisherId") ?? ""),
+    status: status as "DRAFT" | "PUBLISHED" | "HIDDEN" | "ARCHIVED",
+    categoryIds: formData
+      .getAll("categoryIds")
+      .map((value) => String(value))
+      .filter(Boolean),
+  });
+  revalidatePath(`/admin/games/${gameId}`);
+  revalidatePath("/admin/games");
+  revalidatePath("/games");
+  revalidatePath(`/games/${String(formData.get("slug") ?? "")}`);
+}
+
 export async function createPromotionAction(formData: FormData): Promise<void> {
   await adminService.createPromotion({
     name: String(formData.get("name") ?? "").trim(),

@@ -29,6 +29,42 @@ export class AdminService {
     return this.repository.listGames();
   }
 
+  async gameEditor(gameId: string) {
+    await requireAdmin();
+    const game = await this.repository.findGameForEdit(gameId);
+    if (!game) throw new AppError("GAME_NOT_FOUND", "Không tìm thấy game.", 404);
+    return game;
+  }
+
+  async updateGame(gameId: string, input: Parameters<AdminRepository["updateGame"]>[1]) {
+    const admin = await requireAdmin();
+    return this.repository.updateGame(gameId, input, admin.id);
+  }
+
+  async gameMedia(gameId: string) {
+    await requireAdmin();
+    await this.ensureGameExists(gameId);
+    return this.repository.listGameMedia(gameId);
+  }
+
+  async setGameCover(gameId: string, mediaId: string) {
+    await requireAdmin();
+    await this.repository.setGameCover(gameId, mediaId);
+  }
+
+  async deleteGameMedia(mediaId: string) {
+    const admin = await requireAdmin();
+    await this.repository.deleteGameMedia(mediaId, admin.id);
+  }
+
+  private async ensureGameExists(gameId: string) {
+    const games = await this.repository.listGames();
+    const exists = games.some((game) => game.id === gameId);
+    if (!exists) {
+      throw new AppError("GAME_NOT_FOUND", "Không tìm thấy game.", 404);
+    }
+  }
+
   async developers() {
     await requireAdmin();
     return this.repository.listDevelopers();
