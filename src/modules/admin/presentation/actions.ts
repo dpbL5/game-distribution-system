@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { adminService } from "@/modules/admin/infrastructure/admin-service";
+import { paymentService } from "@/modules/payment/infrastructure/payment-service";
 
 export async function createCategoryAction(formData: FormData): Promise<void> {
   await adminService.createCategory({
@@ -67,4 +68,19 @@ export async function createPromotionAction(formData: FormData): Promise<void> {
     description: String(formData.get("description") ?? "").trim() || undefined,
   });
   revalidatePath("/admin/promotions");
+}
+
+/**
+ * Admin confirms or rejects a pending payment, acting as the mock gateway.
+ * Only users with ADMIN role can invoke this (enforced in PaymentService).
+ * Idempotent — re-approving an already SUCCEEDED payment is a no-op.
+ */
+export async function adminCompletePaymentAction(formData: FormData): Promise<void> {
+  const orderId = String(formData.get("orderId") ?? "").trim();
+  if (!orderId) return;
+  const raw = String(formData.get("decision") ?? formData.get("succeeded") ?? "approve");
+  const succeeded = raw === "true" || raw === "approve" || raw === "SUCCEEDED";
+  await paymentService.adminCompleteMock(orderId, succeeded);
+  revalidatePath("/admin/orders");
+  revalidatePath("/orders");
 }

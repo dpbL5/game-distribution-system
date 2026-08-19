@@ -3,7 +3,7 @@ import "server-only";
 import { createHmac } from "node:crypto";
 
 import { getEnvironment } from "@/infrastructure/config/env";
-import { requireUser } from "@/modules/auth/application/guards";
+import { requireAdmin, requireUser } from "@/modules/auth/application/guards";
 import type { PaymentGateway } from "./payment-gateway";
 import type { PaymentRepository } from "./payment.repository";
 import { Decimal } from "@/shared/money/decimal";
@@ -80,6 +80,51 @@ export class PaymentService {
       amount: order.grandTotal,
       status: succeeded ? "SUCCEEDED" : "FAILED",
       ...(succeeded ? {} : { failureReason: "mock_failure" }),
+    });
+    await this.handleCallback(payload, createMockSignature(payload));
+  }
+
+  /**
+   * Admin confirms or rejects a pending invoice, acting as the mock payment
+   * gateway. Only ADMIN can call this. Idempotent: re-confirming an already
+   * SUCCEEDED payment returns without duplicating LibraryItems (see
+   * PrismaPaymentRepository.applyCallback). Rejects are also recorded via
+   * the same callback pipeline so Order moves to PAYMENT_FAILED.
+   */
+  async adminCompleteMock(orderId: string, succeeded: boolean): Promise<void> {
+    await requireAdmin();
+    const order = await this.repository.findOrder(orderId);
+    if (!order) throw new AppError("ORDER_NOT_FOUND", "Không tìm thấy đơn hàng.", 404);
+    if (order.status === "PAID") {
+      const existing = await this.repository.findByOrderId(order.id);
+      if (existing?.status === "SUCCEEDED") return;
+      throw new AppError("PAYMENT_ALREADY_PROCESSED", "Đơn hàng này đã được thanh toán.", 409);
+    }
+    if (order.status === "PAYMENT_FAILED" && succeeded) {
+      throw new AppError(
+        "PAYMENT_ALREADY_PROCESSED",
+        "Đơn hàng đã ở trạng thái thất bại, không thể duyệt lại.",
+        409,
+      );
+    }
+    if (order.status !== "PENDING_PAYMENT") {
+      throw new AppError("PAYMENT_ALREADY_PROCESSED", "Đơn hàng này không thể xác nhận.", 409);
+    }
+    const payment = await this.repository.findByOrderId(order.id);
+    if (!payment || !payment.providerTransactionId) {
+      throw new AppError(
+        "PAYMENT_NOT_STARTED",
+        "Thanh toán chưa được bắt đầu. Khách hàng cần bấm 'Bắt đầu thanh toán' trước.",
+        409,
+      );
+    }
+    if (payment.status === "SUCCEEDED") return;
+    const payload = JSON.stringify({
+      orderId: order.id,
+      providerTransactionId: payment.providerTransactionId,
+      amount: order.grandTotal,
+      status: succeeded ? "SUCCEEDED" : "FAILED",
+      ...(succeeded ? {} : { failureReason: "admin_rejected" }),
     });
     await this.handleCallback(payload, createMockSignature(payload));
   }
