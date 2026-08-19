@@ -1,5 +1,7 @@
+import Link from "next/link";
+
 import { adminService } from "@/modules/admin/infrastructure/admin-service";
-import { createPromotionAction } from "@/modules/admin/presentation/actions";
+import { createPromotionAction, deletePromotionAction, setPromotionStatusAction } from "@/modules/admin/presentation/actions";
 import { StatusBadge } from "@/shared/ui/status-badge";
 import { formatStatus } from "@/shared/utils/format-status";
 
@@ -17,9 +19,7 @@ export default async function AdminPromotionsPage() {
         <div>
           <span className="eyebrow">GIÁ BÁN</span>
           <h1>Khuyến mãi</h1>
-          <p className="lede">
-            Tạo giảm giá theo thời gian; hệ thống chọn mức khuyến mãi hợp lệ cao nhất.
-          </p>
+          <p className="lede">Tạo giảm giá theo thời gian; hệ thống chọn mức khuyến mãi hợp lệ cao nhất. Chọn khuyến mãi để xem/sửa, đổi trạng thái và gán game.</p>
         </div>
       </div>
       <form className="panel stack" action={createPromotionAction}>
@@ -31,16 +31,7 @@ export default async function AdminPromotionsPage() {
           </div>
           <div className="field">
             <label htmlFor="discountPercent">Giảm giá %</label>
-            <input
-              id="discountPercent"
-              name="discountPercent"
-              type="number"
-              min="0"
-              max="100"
-              step="0.01"
-              placeholder="Giảm giá %"
-              required
-            />
+            <input id="discountPercent" name="discountPercent" type="number" min="0" max="100" step="0.01" placeholder="Giảm giá %" required />
           </div>
           <div className="field">
             <label htmlFor="startsAt">Bắt đầu</label>
@@ -50,6 +41,10 @@ export default async function AdminPromotionsPage() {
             <label htmlFor="endsAt">Kết thúc</label>
             <input id="endsAt" name="endsAt" type="datetime-local" required />
           </div>
+        </div>
+        <div className="field">
+          <label htmlFor="description">Mô tả</label>
+          <textarea id="description" name="description" placeholder="Mô tả khuyến mãi (tùy chọn)" />
         </div>
         <button className="button button-primary" type="submit">
           Tạo bản nháp
@@ -65,20 +60,43 @@ export default async function AdminPromotionsPage() {
               <th>Kết thúc</th>
               <th>Game</th>
               <th>Trạng thái</th>
+              <th className="table-actions">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {promotions.map((promotion) => (
               <tr key={promotion.id}>
-                <td>{promotion.name}</td>
+                <td>
+                  <Link href={`/admin/promotions/${promotion.id}`} style={{ fontWeight: 700, textDecoration: "underline" }}>
+                    {promotion.name}
+                  </Link>
+                </td>
                 <td>{promotion.discountPercent}%</td>
                 <td>{promotion.startsAt.toLocaleString("vi-VN")}</td>
                 <td>{promotion.endsAt.toLocaleString("vi-VN")}</td>
                 <td>{promotion.gameCount}</td>
                 <td>
-                  <StatusBadge tone={statusTone[promotion.status] ?? "default"}>
-                    {formatStatus(promotion.status)}
-                  </StatusBadge>
+                  <StatusBadge tone={statusTone[promotion.status] ?? "default"}>{formatStatus(promotion.status)}</StatusBadge>
+                </td>
+                <td className="table-actions">
+                  <div style={{ display: "inline-flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
+                    <Link href={`/admin/promotions/${promotion.id}`} className="button button-secondary">
+                      Xem / sửa
+                    </Link>
+                    <form action={setPromotionStatusAction}>
+                      <input type="hidden" name="id" value={promotion.id} />
+                      <input type="hidden" name="status" value={promotion.status === "ACTIVE" ? "STOPPED" : "ACTIVE"} />
+                      <button className="button button-secondary" type="submit">
+                        {promotion.status === "ACTIVE" ? "Dừng" : "Kích hoạt"}
+                      </button>
+                    </form>
+                    <form action={deletePromotionAction}>
+                      <input type="hidden" name="id" value={promotion.id} />
+                      <button className="button button-danger" type="submit">
+                        Xóa
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             ))}

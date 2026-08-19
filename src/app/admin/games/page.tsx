@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { adminService } from "@/modules/admin/infrastructure/admin-service";
 import { createGameAction, setGameStatusAction } from "@/modules/admin/presentation/actions";
 import { StatusBadge } from "@/shared/ui/status-badge";
@@ -23,7 +25,7 @@ export default async function AdminGamesPage() {
         <div>
           <span className="eyebrow">DANH MỤC</span>
           <h1>Game</h1>
-          <p className="lede">Tạo bản nháp game và phát hành sau khi kiểm duyệt danh mục.</p>
+          <p className="lede">Tạo bản nháp game và phát hành sau khi kiểm duyệt danh mục. Chọn game để xem/sửa, upload ảnh và video.</p>
         </div>
       </div>
       <form className="panel stack" action={createGameAction}>
@@ -43,15 +45,7 @@ export default async function AdminGamesPage() {
           </div>
           <div className="field">
             <label htmlFor="basePrice">Giá gốc</label>
-            <input
-              id="basePrice"
-              name="basePrice"
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="Giá gốc"
-              required
-            />
+            <input id="basePrice" name="basePrice" type="number" min="0" step="0.01" placeholder="Giá gốc" required />
           </div>
           <div className="field">
             <label htmlFor="releaseDate">Ngày phát hành</label>
@@ -112,7 +106,9 @@ export default async function AdminGamesPage() {
             {games.map((game) => (
               <tr key={game.id}>
                 <td>
-                  {game.name}
+                  <Link href={`/admin/games/${game.id}`} style={{ fontWeight: 700, textDecoration: "underline" }}>
+                    {game.name}
+                  </Link>
                   <br />
                   <span className="muted small">{game.slug}</span>
                 </td>
@@ -120,22 +116,21 @@ export default async function AdminGamesPage() {
                 <td>{game.developer}</td>
                 <td>{game.publisher}</td>
                 <td>
-                  <StatusBadge tone={statusTone[game.status] ?? "default"}>
-                    {formatStatus(game.status)}
-                  </StatusBadge>
+                  <StatusBadge tone={statusTone[game.status] ?? "default"}>{formatStatus(game.status)}</StatusBadge>
                 </td>
                 <td className="table-actions">
-                  <form action={setGameStatusAction}>
-                    <input type="hidden" name="gameId" value={game.id} />
-                    <input
-                      type="hidden"
-                      name="status"
-                      value={game.status === "PUBLISHED" ? "HIDDEN" : "PUBLISHED"}
-                    />
-                    <button className="button button-secondary" type="submit">
-                      {game.status === "PUBLISHED" ? "Ẩn" : "Phát hành"}
-                    </button>
-                  </form>
+                  <div style={{ display: "inline-flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                    <Link href={`/admin/games/${game.id}`} className="button button-secondary">
+                      Xem / sửa
+                    </Link>
+                    <form action={setGameStatusAction}>
+                      <input type="hidden" name="gameId" value={game.id} />
+                      <input type="hidden" name="status" value={game.status === "PUBLISHED" ? "HIDDEN" : "PUBLISHED"} />
+                      <button className="button button-secondary" type="submit">
+                        {game.status === "PUBLISHED" ? "Ẩn" : "Phát hành"}
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             ))}
