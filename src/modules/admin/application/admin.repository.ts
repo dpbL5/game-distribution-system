@@ -80,6 +80,7 @@ export interface AdminRepository {
   setGameStatus(
     gameId: string,
     status: "DRAFT" | "PUBLISHED" | "HIDDEN" | "ARCHIVED",
+    actorId?: string,
   ): Promise<void>;
   listPromotions(): Promise<AdminPromotion[]>;
   createPromotion(input: {
@@ -91,8 +92,8 @@ export interface AdminRepository {
     description?: string;
   }): Promise<void>;
   listUsers(): Promise<AdminUser[]>;
-  setUserStatus(userId: string, status: "ACTIVE" | "LOCKED"): Promise<void>;
+  setUserStatus(userId: string, status: "ACTIVE" | "LOCKED", actorId?: string): Promise<void>;
   listOrders(): Promise<AdminOrder[]>;
   listReviews(): Promise<AdminReview[]>;
-  setReviewVisibility(reviewId: string, visibilityStatus: "VISIBLE" | "HIDDEN"): Promise<void>;
+  setReviewVisibility(reviewId: string, visibilityStatus: "VISIBLE" | "HIDDEN", actorId?: string): Promise<void>;
 }

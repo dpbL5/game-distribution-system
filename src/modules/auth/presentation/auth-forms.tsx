@@ -40,13 +40,14 @@ function SubmitButton({ children, pending }: { children: React.ReactNode; pendin
   );
 }
 
-export function LoginForm() {
+export function LoginForm({ next }: { next?: string }) {
   const [state, action, pending] = useActionState(loginAction, initialAuthActionState);
   return (
     <form className="stack" action={action}>
+      {next ? <input type="hidden" name="next" value={next} /> : null}
       <div className="field">
-        <label htmlFor="email">Email</label>
-        <input id="email" name="email" type="email" autoComplete="email" required />
+        <label htmlFor="email">Email hoặc tên đăng nhập</label>
+        <input id="email" name="email" type="text" autoComplete="username" required />
       </div>
       <div className="field">
         <label htmlFor="password">Mật khẩu</label>

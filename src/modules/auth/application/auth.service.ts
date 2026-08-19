@@ -75,7 +75,10 @@ export class AuthService {
   }
 
   async login(input: { email: string; password: string }) {
-    const user = await this.repository.findUserByEmail(normalizeEmail(input.email));
+    const identifier = input.email.trim();
+    const user =
+      (await this.repository.findUserByEmail(normalizeEmail(identifier))) ??
+      (await this.repository.findUserByUsername(normalizeUsername(identifier)));
     if (!user)
       throw new AppError("AUTH_INVALID_CREDENTIALS", "Email hoặc mật khẩu không chính xác.", 401);
     if (user.status === "LOCKED") {

@@ -1,8 +1,9 @@
 import "server-only";
 
 import { requireUser } from "@/modules/auth/application/guards";
-import type { WishlistRepository } from "./wishlist.repository";
+import { libraryService } from "@/modules/library";
 import { AppError } from "@/shared/errors/app-error";
+import type { WishlistRepository } from "./wishlist.repository";
 
 export class WishlistService {
   constructor(private readonly repository: WishlistRepository) {}
@@ -17,7 +18,7 @@ export class WishlistService {
     if (!(await this.repository.findPublishedGame(gameId))) {
       throw new AppError("GAME_NOT_AVAILABLE", "Game hiện không khả dụng.", 409);
     }
-    if (await this.repository.isOwned(user.id, gameId)) {
+    if (await libraryService.ownsGame(user.id, gameId)) {
       throw new AppError("GAME_ALREADY_OWNED", "Game đã có trong thư viện của bạn.", 409);
     }
     await this.repository.add(user.id, gameId);

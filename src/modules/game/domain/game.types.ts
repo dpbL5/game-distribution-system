@@ -6,6 +6,8 @@ export type PublishedGameSummary = {
   slug: string;
   shortDescription: string;
   basePrice: string;
+  currentPrice: string;
+  discountPercent: string;
   releaseDate: Date;
   coverPath: string | null;
   developerName: string;
@@ -19,8 +21,10 @@ export type PublishedGameDetail = PublishedGameSummary & {
   platforms: string[];
   ageRating: string | null;
   media: Array<{ id: string; type: string; path: string; title: string | null }>;
+  isOwned: boolean;
   reviews: Array<{
     id: string;
+    userId: string;
     displayName: string;
     content: string;
     isRecommended: boolean;

@@ -26,7 +26,6 @@ export type CartItemRecord = {
 export interface CartRepository {
   listActiveItems(userId: string): Promise<CartItemRecord[]>;
   findPublishedGame(gameId: string): Promise<CartGameRecord | null>;
-  isOwned(userId: string, gameId: string): Promise<boolean>;
   addItem(userId: string, gameId: string, priceWhenAdded: string): Promise<void>;
   removeItem(userId: string, itemId: string): Promise<void>;
 }

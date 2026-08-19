@@ -4,6 +4,7 @@ export type ListPublishedGamesInput = {
   query?: string;
   categorySlug?: string;
   platform?: string;
+  sort?: "newest" | "name";
   page?: number;
   pageSize?: number;
 };

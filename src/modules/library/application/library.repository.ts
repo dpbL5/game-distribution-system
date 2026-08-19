@@ -12,4 +12,5 @@ export type LibraryItemRecord = {
 
 export interface LibraryRepository {
   listForUser(userId: string): Promise<LibraryItemRecord[]>;
+  ownsGame(userId: string, gameId: string): Promise<boolean>;
 }

@@ -1,3 +1,5 @@
+import { currentUser } from "@/modules/auth";
+import { libraryService } from "@/modules/library";
 import type {
   GameRepository,
   ListPublishedGamesInput,
@@ -12,7 +14,12 @@ export class GameService {
     return this.repository.listPublished(input);
   }
 
-  findPublishedBySlug(slug: string): Promise<PublishedGameDetail | null> {
-    return this.repository.findPublishedBySlug(slug);
+  async findPublishedBySlug(slug: string): Promise<PublishedGameDetail | null> {
+    const game = await this.repository.findPublishedBySlug(slug);
+    if (!game) return null;
+    const user = await currentUser();
+    if (!user) return game;
+    const isOwned = await libraryService.ownsGame(user.id, game.id);
+    return { ...game, isOwned };
   }
 }

@@ -46,12 +46,6 @@ function toReview(review: {
 }
 
 export class PrismaReviewRepository implements ReviewRepository {
-  async isOwned(userId: string, gameId: string): Promise<boolean> {
-    return Boolean(
-      await prisma.libraryItem.findUnique({ where: { userId_gameId: { userId, gameId } } }),
-    );
-  }
-
   async findByUserAndGame(userId: string, gameId: string): Promise<ReviewRecord | null> {
     const review = await prisma.review.findUnique({
       where: { userId_gameId: { userId, gameId } },

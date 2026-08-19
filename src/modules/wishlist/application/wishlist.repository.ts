@@ -14,7 +14,6 @@ export type WishlistItemRecord = {
 export interface WishlistRepository {
   list(userId: string): Promise<WishlistItemRecord[]>;
   findPublishedGame(gameId: string): Promise<WishlistItemRecord["game"] | null>;
-  isOwned(userId: string, gameId: string): Promise<boolean>;
   add(userId: string, gameId: string): Promise<void>;
   remove(userId: string, itemId: string): Promise<void>;
 }

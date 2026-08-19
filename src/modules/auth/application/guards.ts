@@ -9,6 +9,10 @@ export async function requireUser() {
   return user;
 }
 
+export async function currentUser() {
+  return authService.currentUser();
+}
+
 export async function requireAdmin() {
   const user = await requireUser();
   if (user.role !== "ADMIN")

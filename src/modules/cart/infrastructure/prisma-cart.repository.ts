@@ -86,12 +86,6 @@ export class PrismaCartRepository implements CartRepository {
     return game ? toGameRecord(game) : null;
   }
 
-  async isOwned(userId: string, gameId: string): Promise<boolean> {
-    return Boolean(
-      await prisma.libraryItem.findUnique({ where: { userId_gameId: { userId, gameId } } }),
-    );
-  }
-
   async addItem(userId: string, gameId: string, priceWhenAdded: string): Promise<void> {
     const cart = await prisma.cart.upsert({
       where: { userId_status: { userId, status: "ACTIVE" } },

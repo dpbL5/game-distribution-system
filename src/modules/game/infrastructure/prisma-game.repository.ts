@@ -7,8 +7,44 @@ import type {
   PagedGames,
 } from "@/modules/game/application/game.repository";
 import type { PublishedGameDetail, PublishedGameSummary } from "@/modules/game/domain/game.types";
+import { calculateCurrentPrice, selectActivePromotion } from "@/modules/promotion";
 
 const DEFAULT_PAGE_SIZE = 12;
+
+type GameWithPricing = {
+  basePrice: { toString(): string };
+  promotionLinks: Array<{
+    promotion: {
+      id: string;
+      discountPercent: { toString(): string };
+      startsAt: Date;
+      endsAt: Date;
+      status: string;
+    };
+  }>;
+};
+
+function pricingFor(game: GameWithPricing): {
+  basePrice: string;
+  currentPrice: string;
+  discountPercent: string;
+} {
+  const promotion = selectActivePromotion(
+    game.promotionLinks.map(({ promotion }) => ({
+      id: promotion.id,
+      discountPercent: promotion.discountPercent.toString(),
+      startsAt: promotion.startsAt,
+      endsAt: promotion.endsAt,
+      status: promotion.status as "DRAFT" | "ACTIVE" | "STOPPED",
+    })),
+  );
+  const price = calculateCurrentPrice(game.basePrice.toString(), promotion);
+  return {
+    basePrice: price.basePrice,
+    currentPrice: price.price,
+    discountPercent: price.discountPercent,
+  };
+}
 
 function toSummary(game: {
   id: string;
@@ -22,13 +58,17 @@ function toSummary(game: {
   developer: { name: string };
   publisher: { name: string };
   categoryLinks: Array<{ category: { name: string } }>;
+  promotionLinks: GameWithPricing["promotionLinks"];
 }): PublishedGameSummary {
+  const pricing = pricingFor(game as GameWithPricing);
   return {
     id: game.id,
     name: game.name,
     slug: game.slug,
     shortDescription: game.shortDescription,
-    basePrice: game.basePrice.toString(),
+    basePrice: pricing.basePrice,
+    currentPrice: pricing.currentPrice,
+    discountPercent: pricing.discountPercent,
     releaseDate: game.releaseDate,
     coverPath: game.coverPath,
     developerName: game.developer.name,
@@ -64,7 +104,10 @@ export class PrismaGameRepository implements GameRepository {
       prisma.game.count({ where }),
       prisma.game.findMany({
         where,
-        orderBy: [{ releaseDate: "desc" }, { name: "asc" }],
+        orderBy:
+          input.sort === "name"
+            ? [{ name: "asc" }, { releaseDate: "desc" }]
+            : [{ releaseDate: "desc" }, { name: "asc" }],
         skip: (page - 1) * pageSize,
         take: pageSize,
         select: {
@@ -79,6 +122,13 @@ export class PrismaGameRepository implements GameRepository {
           developer: { select: { name: true } },
           publisher: { select: { name: true } },
           categoryLinks: { select: { category: { select: { name: true } } } },
+          promotionLinks: {
+            select: {
+              promotion: {
+                select: { id: true, discountPercent: true, startsAt: true, endsAt: true, status: true },
+              },
+            },
+          },
         },
       }),
     ]);
@@ -110,6 +160,13 @@ export class PrismaGameRepository implements GameRepository {
         developer: { select: { name: true } },
         publisher: { select: { name: true } },
         categoryLinks: { select: { category: { select: { name: true } } } },
+        promotionLinks: {
+          select: {
+            promotion: {
+              select: { id: true, discountPercent: true, startsAt: true, endsAt: true, status: true },
+            },
+          },
+        },
         media: {
           select: { id: true, type: true, path: true, title: true },
           orderBy: { sortOrder: "asc" },
@@ -119,6 +176,7 @@ export class PrismaGameRepository implements GameRepository {
           orderBy: { createdAt: "desc" },
           select: {
             id: true,
+            userId: true,
             content: true,
             isRecommended: true,
             createdAt: true,
@@ -136,8 +194,10 @@ export class PrismaGameRepository implements GameRepository {
       platforms: game.platforms,
       ageRating: game.ageRating,
       media: game.media,
+      isOwned: false,
       reviews: game.reviews.map((review) => ({
         id: review.id,
+        userId: review.userId,
         displayName: review.user.displayName,
         content: review.content,
         isRecommended: review.isRecommended,

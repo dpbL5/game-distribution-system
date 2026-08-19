@@ -15,11 +15,24 @@ function first(value: string | string[] | undefined): string | undefined {
 export default async function GamesPage({ searchParams }: GamesPageProps) {
   const params = await searchParams;
   const query = first(params.q);
+  const platform = first(params.platform);
+  const sort = first(params.sort);
   const page = Number(first(params.page) ?? "1");
-  const result = await gameService.listPublished({ query, page: Number.isFinite(page) ? page : 1 });
+  const result = await gameService.listPublished({
+    query,
+    platform: platform || undefined,
+    sort: sort === "name" ? "name" : "newest",
+    page: Number.isFinite(page) ? page : 1,
+  });
 
-  const buildHref = (pageNumber: number) =>
-    `/games?page=${pageNumber}${query ? `&q=${encodeURIComponent(query)}` : ""}`;
+  const buildHref = (pageNumber: number) => {
+    const search = new URLSearchParams();
+    search.set("page", String(pageNumber));
+    if (query) search.set("q", query);
+    if (platform) search.set("platform", platform);
+    if (sort) search.set("sort", sort);
+    return `/games?${search.toString()}`;
+  };
 
   return (
     <main className="main-shell">
@@ -66,7 +79,7 @@ export default async function GamesPage({ searchParams }: GamesPageProps) {
         <div className="card-grid">
           {result.items.map((game) => (
             <article className="game-card" key={game.id}>
-              <GameCover name={game.name} />
+              <GameCover name={game.name} coverPath={game.coverPath} />
               <div className="game-info">
                 <span className="eyebrow">
                   {game.developerName} · {game.releaseDate.getFullYear()}
@@ -83,7 +96,14 @@ export default async function GamesPage({ searchParams }: GamesPageProps) {
                   </div>
                 ) : null}
                 <div className="price-row">
-                  <span className="price">{formatMoney(game.basePrice)}</span>
+                  {game.discountPercent !== "0.00" ? (
+                    <span className="price">
+                      {formatMoney(game.currentPrice)}{" "}
+                      <span className="muted small price-strike">{formatMoney(game.basePrice)}</span>
+                    </span>
+                  ) : (
+                    <span className="price">{formatMoney(game.basePrice)}</span>
+                  )}
                   <Link className="button button-secondary" href={`/games/${game.slug}`}>
                     Xem chi tiết
                   </Link>
