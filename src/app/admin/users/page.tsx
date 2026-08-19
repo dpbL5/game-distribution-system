@@ -1,5 +1,9 @@
 import { adminService } from "@/modules/admin/infrastructure/admin-service";
-import { setUserStatusAction } from "@/modules/admin/presentation/actions";
+import {
+  deleteUserAction,
+  setUserStatusAction,
+  updateUserAction,
+} from "@/modules/admin/presentation/actions";
 import { StatusBadge } from "@/shared/ui/status-badge";
 import { formatStatus } from "@/shared/utils/format-status";
 
@@ -11,7 +15,7 @@ export default async function AdminUsersPage() {
         <div>
           <span className="eyebrow">TRUY CẬP</span>
           <h1>Người dùng</h1>
-          <p className="lede">Vai trò và trạng thái tài khoản được kiểm soát tại máy chủ.</p>
+          <p className="lede">Sửa tên hiển thị/vai trò, khóa/mở và xóa tài khoản (chặn xóa khi đã có đơn hàng và không tự xóa).</p>
         </div>
       </div>
       <div className="table-wrap">
@@ -28,9 +32,24 @@ export default async function AdminUsersPage() {
             {users.map((user) => (
               <tr key={user.id}>
                 <td>
-                  {user.displayName ?? user.username}
-                  <br />
-                  <span className="muted small">{user.email}</span>
+                  <form className="stack" action={updateUserAction}>
+                    <input type="hidden" name="userId" value={user.id} />
+                    <div className="field">
+                      <label htmlFor={`user-display-${user.id}`}>Tên hiển thị</label>
+                      <input id={`user-display-${user.id}`} name="displayName" defaultValue={user.displayName} required />
+                    </div>
+                    <div className="field">
+                      <label htmlFor={`user-role-${user.id}`}>Vai trò</label>
+                      <select id={`user-role-${user.id}`} name="role" defaultValue={user.role}>
+                        <option value="CUSTOMER">Khách hàng</option>
+                        <option value="ADMIN">Quản trị viên</option>
+                      </select>
+                    </div>
+                    <div className="muted small">{user.username} · {user.email}</div>
+                    <button className="button button-secondary" type="submit">
+                      Lưu
+                    </button>
+                  </form>
                 </td>
                 <td>
                   <StatusBadge tone={user.role === "ADMIN" ? "info" : "default"}>
@@ -43,17 +62,25 @@ export default async function AdminUsersPage() {
                   </StatusBadge>
                 </td>
                 <td className="table-actions">
-                  <form action={setUserStatusAction}>
-                    <input type="hidden" name="userId" value={user.id} />
-                    <input
-                      type="hidden"
-                      name="status"
-                      value={user.status === "LOCKED" ? "ACTIVE" : "LOCKED"}
-                    />
-                    <button className="button button-secondary" type="submit">
-                      {user.status === "LOCKED" ? "Mở khóa" : "Khóa"}
-                    </button>
-                  </form>
+                  <div className="form-actions">
+                    <form action={setUserStatusAction}>
+                      <input type="hidden" name="userId" value={user.id} />
+                      <input
+                        type="hidden"
+                        name="status"
+                        value={user.status === "LOCKED" ? "ACTIVE" : "LOCKED"}
+                      />
+                      <button className="button button-secondary" type="submit">
+                        {user.status === "LOCKED" ? "Mở khóa" : "Khóa"}
+                      </button>
+                    </form>
+                    <form action={deleteUserAction}>
+                      <input type="hidden" name="userId" value={user.id} />
+                      <button className="button button-danger" type="submit">
+                        Xóa
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             ))}

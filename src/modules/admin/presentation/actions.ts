@@ -22,12 +22,91 @@ export async function setUserStatusAction(formData: FormData): Promise<void> {
   revalidatePath("/admin/users");
 }
 
+export async function updateUserAction(formData: FormData): Promise<void> {
+  await adminService.updateUser(String(formData.get("userId") ?? ""), {
+    displayName: String(formData.get("displayName") ?? "").trim(),
+    role: String(formData.get("role") ?? "CUSTOMER") === "ADMIN" ? "ADMIN" : "CUSTOMER",
+  });
+  revalidatePath("/admin/users");
+}
+
+export async function deleteUserAction(formData: FormData): Promise<void> {
+  const userId = String(formData.get("userId") ?? "").trim();
+  if (!userId) return;
+  await adminService.deleteUser(userId);
+  revalidatePath("/admin/users");
+}
+
 export async function setReviewVisibilityAction(formData: FormData): Promise<void> {
   await adminService.setReviewVisibility(
     String(formData.get("reviewId") ?? ""),
     String(formData.get("visibilityStatus") ?? "VISIBLE") === "HIDDEN" ? "HIDDEN" : "VISIBLE",
   );
   revalidatePath("/admin/reviews");
+}
+
+export async function createDeveloperAction(formData: FormData): Promise<void> {
+  await adminService.createDeveloper({
+    name: String(formData.get("name") ?? "").trim(),
+    description: String(formData.get("description") ?? "").trim() || undefined,
+    website: String(formData.get("website") ?? "").trim() || undefined,
+    countryCode: String(formData.get("countryCode") ?? "").trim() || undefined,
+  });
+  revalidatePath("/admin/developers");
+  revalidatePath("/admin/games");
+}
+
+export async function updateDeveloperAction(formData: FormData): Promise<void> {
+  const id = String(formData.get("id") ?? "").trim();
+  if (!id) return;
+  await adminService.updateDeveloper(id, {
+    name: String(formData.get("name") ?? "").trim(),
+    description: String(formData.get("description") ?? "").trim() || undefined,
+    website: String(formData.get("website") ?? "").trim() || undefined,
+    countryCode: String(formData.get("countryCode") ?? "").trim() || undefined,
+  });
+  revalidatePath("/admin/developers");
+  revalidatePath("/admin/games");
+}
+
+export async function deleteDeveloperAction(formData: FormData): Promise<void> {
+  const id = String(formData.get("id") ?? "").trim();
+  if (!id) return;
+  await adminService.deleteDeveloper(id);
+  revalidatePath("/admin/developers");
+  revalidatePath("/admin/games");
+}
+
+export async function createPublisherAction(formData: FormData): Promise<void> {
+  await adminService.createPublisher({
+    name: String(formData.get("name") ?? "").trim(),
+    description: String(formData.get("description") ?? "").trim() || undefined,
+    website: String(formData.get("website") ?? "").trim() || undefined,
+    countryCode: String(formData.get("countryCode") ?? "").trim() || undefined,
+  });
+  revalidatePath("/admin/publishers");
+  revalidatePath("/admin/games");
+}
+
+export async function updatePublisherAction(formData: FormData): Promise<void> {
+  const id = String(formData.get("id") ?? "").trim();
+  if (!id) return;
+  await adminService.updatePublisher(id, {
+    name: String(formData.get("name") ?? "").trim(),
+    description: String(formData.get("description") ?? "").trim() || undefined,
+    website: String(formData.get("website") ?? "").trim() || undefined,
+    countryCode: String(formData.get("countryCode") ?? "").trim() || undefined,
+  });
+  revalidatePath("/admin/publishers");
+  revalidatePath("/admin/games");
+}
+
+export async function deletePublisherAction(formData: FormData): Promise<void> {
+  const id = String(formData.get("id") ?? "").trim();
+  if (!id) return;
+  await adminService.deletePublisher(id);
+  revalidatePath("/admin/publishers");
+  revalidatePath("/admin/games");
 }
 
 export async function createGameAction(formData: FormData): Promise<void> {
@@ -67,6 +146,34 @@ export async function createPromotionAction(formData: FormData): Promise<void> {
     endsAt: new Date(String(formData.get("endsAt") ?? "")),
     description: String(formData.get("description") ?? "").trim() || undefined,
   });
+  revalidatePath("/admin/promotions");
+}
+
+export async function updatePromotionAction(formData: FormData): Promise<void> {
+  const id = String(formData.get("id") ?? "").trim();
+  if (!id) return;
+  await adminService.updatePromotion(id, {
+    name: String(formData.get("name") ?? "").trim(),
+    discountPercent: String(formData.get("discountPercent") ?? "0"),
+    startsAt: new Date(String(formData.get("startsAt") ?? "")),
+    endsAt: new Date(String(formData.get("endsAt") ?? "")),
+    description: String(formData.get("description") ?? "").trim() || undefined,
+  });
+  revalidatePath("/admin/promotions");
+}
+
+export async function setPromotionStatusAction(formData: FormData): Promise<void> {
+  const id = String(formData.get("id") ?? "").trim();
+  const status = String(formData.get("status") ?? "DRAFT");
+  if (!["DRAFT", "ACTIVE", "STOPPED"].includes(status)) return;
+  await adminService.setPromotionStatus(id, status as "DRAFT" | "ACTIVE" | "STOPPED");
+  revalidatePath("/admin/promotions");
+}
+
+export async function deletePromotionAction(formData: FormData): Promise<void> {
+  const id = String(formData.get("id") ?? "").trim();
+  if (!id) return;
+  await adminService.deletePromotion(id);
   revalidatePath("/admin/promotions");
 }
 
