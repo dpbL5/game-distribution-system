@@ -1,245 +1,263 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { adminService } from "@/modules/admin/infrastructure/admin-service";
-import { paymentService } from "@/modules/payment/infrastructure/payment-service";
+import { localMediaStorage } from "@/infrastructure/storage/local-media-storage";
+
+function stringField(formData: FormData, key: string): string {
+  return String(formData.get(key) ?? "").trim();
+}
 
 export async function createCategoryAction(formData: FormData): Promise<void> {
   await adminService.createCategory({
-    name: String(formData.get("name") ?? "").trim(),
-    slug: String(formData.get("slug") ?? "").trim(),
-    description: String(formData.get("description") ?? "").trim() || undefined,
+    name: stringField(formData, "name"),
+    slug: stringField(formData, "slug"),
+    description: stringField(formData, "description") || undefined,
   });
   revalidatePath("/admin/categories");
 }
 
+export async function updateCategoryAction(formData: FormData): Promise<void> {
+  await adminService.updateCategory(stringField(formData, "id"), {
+    name: stringField(formData, "name"),
+    slug: stringField(formData, "slug"),
+    description: stringField(formData, "description") || undefined,
+  });
+  revalidatePath("/admin/categories");
+}
+
+export async function deleteCategoryAction(formData: FormData): Promise<void> {
+  await adminService.deleteCategory(stringField(formData, "id"));
+  revalidatePath("/admin/categories");
+}
+
+export async function createDeveloperAction(formData: FormData): Promise<void> {
+  await adminService.createDeveloper({
+    name: stringField(formData, "name"),
+    description: stringField(formData, "description") || undefined,
+    website: stringField(formData, "website") || undefined,
+  });
+  revalidatePath("/admin/developers");
+}
+
+export async function updateDeveloperAction(formData: FormData): Promise<void> {
+  await adminService.updateDeveloper(stringField(formData, "id"), {
+    name: stringField(formData, "name"),
+    description: stringField(formData, "description") || undefined,
+    website: stringField(formData, "website") || undefined,
+  });
+  revalidatePath("/admin/developers");
+}
+
+export async function deleteDeveloperAction(formData: FormData): Promise<void> {
+  await adminService.deleteDeveloper(stringField(formData, "id"));
+  revalidatePath("/admin/developers");
+}
+
+export async function createPublisherAction(formData: FormData): Promise<void> {
+  await adminService.createPublisher({
+    name: stringField(formData, "name"),
+    description: stringField(formData, "description") || undefined,
+    website: stringField(formData, "website") || undefined,
+  });
+  revalidatePath("/admin/publishers");
+}
+
+export async function updatePublisherAction(formData: FormData): Promise<void> {
+  await adminService.updatePublisher(stringField(formData, "id"), {
+    name: stringField(formData, "name"),
+    description: stringField(formData, "description") || undefined,
+    website: stringField(formData, "website") || undefined,
+  });
+  revalidatePath("/admin/publishers");
+}
+
+export async function deletePublisherAction(formData: FormData): Promise<void> {
+  await adminService.deletePublisher(stringField(formData, "id"));
+  revalidatePath("/admin/publishers");
+}
+
 export async function setUserStatusAction(formData: FormData): Promise<void> {
   await adminService.setUserStatus(
-    String(formData.get("userId") ?? ""),
-    String(formData.get("status") ?? "ACTIVE") === "LOCKED" ? "LOCKED" : "ACTIVE",
+    stringField(formData, "userId"),
+    stringField(formData, "status") === "LOCKED" ? "LOCKED" : "ACTIVE",
   );
-  revalidatePath("/admin/users");
-}
-
-export async function updateUserAction(formData: FormData): Promise<void> {
-  await adminService.updateUser(String(formData.get("userId") ?? ""), {
-    displayName: String(formData.get("displayName") ?? "").trim(),
-    role: String(formData.get("role") ?? "CUSTOMER") === "ADMIN" ? "ADMIN" : "CUSTOMER",
-  });
-  revalidatePath("/admin/users");
-}
-
-export async function deleteUserAction(formData: FormData): Promise<void> {
-  const userId = String(formData.get("userId") ?? "").trim();
-  if (!userId) return;
-  await adminService.deleteUser(userId);
   revalidatePath("/admin/users");
 }
 
 export async function setReviewVisibilityAction(formData: FormData): Promise<void> {
   await adminService.setReviewVisibility(
-    String(formData.get("reviewId") ?? ""),
-    String(formData.get("visibilityStatus") ?? "VISIBLE") === "HIDDEN" ? "HIDDEN" : "VISIBLE",
+    stringField(formData, "reviewId"),
+    stringField(formData, "visibilityStatus") === "HIDDEN" ? "HIDDEN" : "VISIBLE",
   );
   revalidatePath("/admin/reviews");
 }
 
-export async function createDeveloperAction(formData: FormData): Promise<void> {
-  await adminService.createDeveloper({
-    name: String(formData.get("name") ?? "").trim(),
-    description: String(formData.get("description") ?? "").trim() || undefined,
-    website: String(formData.get("website") ?? "").trim() || undefined,
-    countryCode: String(formData.get("countryCode") ?? "").trim() || undefined,
-  });
-  revalidatePath("/admin/developers");
-  revalidatePath("/admin/games");
-}
-
-export async function updateDeveloperAction(formData: FormData): Promise<void> {
-  const id = String(formData.get("id") ?? "").trim();
-  if (!id) return;
-  await adminService.updateDeveloper(id, {
-    name: String(formData.get("name") ?? "").trim(),
-    description: String(formData.get("description") ?? "").trim() || undefined,
-    website: String(formData.get("website") ?? "").trim() || undefined,
-    countryCode: String(formData.get("countryCode") ?? "").trim() || undefined,
-  });
-  revalidatePath("/admin/developers");
-  revalidatePath("/admin/games");
-}
-
-export async function deleteDeveloperAction(formData: FormData): Promise<void> {
-  const id = String(formData.get("id") ?? "").trim();
-  if (!id) return;
-  await adminService.deleteDeveloper(id);
-  revalidatePath("/admin/developers");
-  revalidatePath("/admin/games");
-}
-
-export async function createPublisherAction(formData: FormData): Promise<void> {
-  await adminService.createPublisher({
-    name: String(formData.get("name") ?? "").trim(),
-    description: String(formData.get("description") ?? "").trim() || undefined,
-    website: String(formData.get("website") ?? "").trim() || undefined,
-    countryCode: String(formData.get("countryCode") ?? "").trim() || undefined,
-  });
-  revalidatePath("/admin/publishers");
-  revalidatePath("/admin/games");
-}
-
-export async function updatePublisherAction(formData: FormData): Promise<void> {
-  const id = String(formData.get("id") ?? "").trim();
-  if (!id) return;
-  await adminService.updatePublisher(id, {
-    name: String(formData.get("name") ?? "").trim(),
-    description: String(formData.get("description") ?? "").trim() || undefined,
-    website: String(formData.get("website") ?? "").trim() || undefined,
-    countryCode: String(formData.get("countryCode") ?? "").trim() || undefined,
-  });
-  revalidatePath("/admin/publishers");
-  revalidatePath("/admin/games");
-}
-
-export async function deletePublisherAction(formData: FormData): Promise<void> {
-  const id = String(formData.get("id") ?? "").trim();
-  if (!id) return;
-  await adminService.deletePublisher(id);
-  revalidatePath("/admin/publishers");
-  revalidatePath("/admin/games");
-}
-
 export async function createGameAction(formData: FormData): Promise<void> {
   await adminService.createGame({
-    name: String(formData.get("name") ?? "").trim(),
-    slug: String(formData.get("slug") ?? "").trim(),
-    shortDescription: String(formData.get("shortDescription") ?? "").trim(),
-    description: String(formData.get("description") ?? "").trim(),
-    basePrice: String(formData.get("basePrice") ?? "0"),
-    releaseDate: new Date(String(formData.get("releaseDate") ?? "")),
-    platforms: String(formData.get("platforms") ?? "PC")
+    name: stringField(formData, "name"),
+    slug: stringField(formData, "slug"),
+    shortDescription: stringField(formData, "shortDescription"),
+    description: stringField(formData, "description"),
+    basePrice: stringField(formData, "basePrice") || "0",
+    releaseDate: new Date(stringField(formData, "releaseDate")),
+    platforms: stringField(formData, "platforms")
       .split(",")
       .map((platform) => platform.trim())
       .filter(Boolean),
-    developerId: String(formData.get("developerId") ?? ""),
-    publisherId: String(formData.get("publisherId") ?? ""),
+    developerId: stringField(formData, "developerId"),
+    publisherId: stringField(formData, "publisherId"),
   });
   revalidatePath("/admin/games");
 }
 
+export async function updateGameAction(formData: FormData): Promise<void> {
+  const id = stringField(formData, "id");
+  const categoryIds = formData.getAll("categoryIds").map((value) => String(value)).filter(Boolean);
+  let coverPath: string | null | undefined;
+  let heroPath: string | null | undefined;
+
+  const coverFile = formData.get("coverFile");
+  if (coverFile instanceof File && coverFile.size > 0) {
+    const stored = await localMediaStorage.save({
+      buffer: Buffer.from(await coverFile.arrayBuffer()),
+      filename: coverFile.name,
+      mimeType: coverFile.type || "image/jpeg",
+    });
+    coverPath = stored.path;
+  }
+  const heroFile = formData.get("heroFile");
+  if (heroFile instanceof File && heroFile.size > 0) {
+    const stored = await localMediaStorage.save({
+      buffer: Buffer.from(await heroFile.arrayBuffer()),
+      filename: heroFile.name,
+      mimeType: heroFile.type || "image/jpeg",
+    });
+    heroPath = stored.path;
+  }
+
+  await adminService.updateGame(id, {
+    name: stringField(formData, "name") || undefined,
+    slug: stringField(formData, "slug") || undefined,
+    shortDescription: stringField(formData, "shortDescription") || undefined,
+    description: stringField(formData, "description") || undefined,
+    basePrice: stringField(formData, "basePrice") || undefined,
+    releaseDate: stringField(formData, "releaseDate") ? new Date(stringField(formData, "releaseDate")) : undefined,
+    platforms: formData.has("platforms")
+      ? stringField(formData, "platforms")
+          .split(",")
+          .map((value) => value.trim())
+          .filter(Boolean)
+      : undefined,
+    developerId: stringField(formData, "developerId") || undefined,
+    publisherId: stringField(formData, "publisherId") || undefined,
+    ageRating: formData.has("ageRating") ? stringField(formData, "ageRating") || null : undefined,
+    coverPath,
+    heroPath,
+    categoryIds: formData.has("categoryIds") ? categoryIds : undefined,
+  });
+  revalidatePath("/admin/games");
+  revalidatePath(`/admin/games/${id}`);
+  revalidatePath("/games");
+}
+
+export async function deleteGameAction(formData: FormData): Promise<void> {
+  const id = stringField(formData, "id");
+  const game = await adminService.getGame(id);
+  await adminService.deleteGame(id);
+  if (game) {
+    if (game.coverPath) await localMediaStorage.delete(game.coverPath);
+    if (game.heroPath) await localMediaStorage.delete(game.heroPath);
+    for (const media of game.media) await localMediaStorage.delete(media.path);
+  }
+  revalidatePath("/admin/games");
+  revalidatePath("/games");
+  redirect("/admin/games");
+}
+
 export async function setGameStatusAction(formData: FormData): Promise<void> {
-  const status = String(formData.get("status") ?? "DRAFT");
+  const status = stringField(formData, "status");
   if (!["DRAFT", "PUBLISHED", "HIDDEN", "ARCHIVED"].includes(status)) return;
   await adminService.setGameStatus(
-    String(formData.get("gameId") ?? ""),
+    stringField(formData, "gameId"),
     status as "DRAFT" | "PUBLISHED" | "HIDDEN" | "ARCHIVED",
   );
   revalidatePath("/admin/games");
   revalidatePath("/games");
 }
 
-export async function setGameCoverAction(formData: FormData): Promise<void> {
-  const gameId = String(formData.get("gameId") ?? "").trim();
-  const mediaId = String(formData.get("mediaId") ?? "").trim();
-  if (!gameId || !mediaId) return;
-  await adminService.setGameCover(gameId, mediaId);
+export async function uploadGameMediaAction(formData: FormData): Promise<void> {
+  const gameId = stringField(formData, "gameId");
+  const type = stringField(formData, "type") === "VIDEO" ? "VIDEO" : "IMAGE";
+  const title = stringField(formData, "title") || null;
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) return;
+  const stored = await localMediaStorage.save({
+    buffer: Buffer.from(await file.arrayBuffer()),
+    filename: file.name,
+    mimeType: file.type || (type === "VIDEO" ? "video/mp4" : "image/jpeg"),
+  });
+  try {
+    await adminService.createGameMedia({ gameId, type, path: stored.path, title });
+  } catch (error) {
+    await localMediaStorage.delete(stored.path);
+    throw error;
+  }
   revalidatePath("/admin/games");
   revalidatePath(`/admin/games/${gameId}`);
-  revalidatePath("/games");
-  revalidatePath(`/games/${String(formData.get("slug") ?? "")}`);
 }
 
 export async function deleteGameMediaAction(formData: FormData): Promise<void> {
-  const gameId = String(formData.get("gameId") ?? "").trim();
-  const mediaId = String(formData.get("mediaId") ?? "").trim();
-  if (!gameId || !mediaId) return;
-  await adminService.deleteGameMedia(mediaId);
-  revalidatePath(`/admin/games/${gameId}`);
+  const id = stringField(formData, "id");
+  const gameId = stringField(formData, "gameId");
+  const path = await adminService.deleteGameMedia(id);
+  if (path) await localMediaStorage.delete(path);
   revalidatePath("/admin/games");
-  revalidatePath("/games");
-}
-
-export async function updateGameAction(formData: FormData): Promise<void> {
-  const gameId = String(formData.get("gameId") ?? "").trim();
-  if (!gameId) return;
-  const status = String(formData.get("status") ?? "DRAFT");
-  if (!["DRAFT", "PUBLISHED", "HIDDEN", "ARCHIVED"].includes(status)) return;
-  await adminService.updateGame(gameId, {
-    name: String(formData.get("name") ?? "").trim(),
-    slug: String(formData.get("slug") ?? "").trim(),
-    shortDescription: String(formData.get("shortDescription") ?? "").trim(),
-    description: String(formData.get("description") ?? "").trim(),
-    basePrice: String(formData.get("basePrice") ?? "0"),
-    releaseDate: new Date(String(formData.get("releaseDate") ?? "")),
-    platforms: String(formData.get("platforms") ?? "PC")
-      .split(",")
-      .map((platform) => platform.trim())
-      .filter(Boolean),
-    ageRating: String(formData.get("ageRating") ?? "").trim() || null,
-    developerId: String(formData.get("developerId") ?? ""),
-    publisherId: String(formData.get("publisherId") ?? ""),
-    status: status as "DRAFT" | "PUBLISHED" | "HIDDEN" | "ARCHIVED",
-    categoryIds: formData
-      .getAll("categoryIds")
-      .map((value) => String(value))
-      .filter(Boolean),
-  });
-  revalidatePath(`/admin/games/${gameId}`);
-  revalidatePath("/admin/games");
-  revalidatePath("/games");
-  revalidatePath(`/games/${String(formData.get("slug") ?? "")}`);
+  if (gameId) revalidatePath(`/admin/games/${gameId}`);
 }
 
 export async function createPromotionAction(formData: FormData): Promise<void> {
   await adminService.createPromotion({
-    name: String(formData.get("name") ?? "").trim(),
-    discountPercent: String(formData.get("discountPercent") ?? "0"),
-    startsAt: new Date(String(formData.get("startsAt") ?? "")),
-    endsAt: new Date(String(formData.get("endsAt") ?? "")),
-    description: String(formData.get("description") ?? "").trim() || undefined,
+    name: stringField(formData, "name"),
+    discountPercent: stringField(formData, "discountPercent") || "0",
+    startsAt: new Date(stringField(formData, "startsAt")),
+    endsAt: new Date(stringField(formData, "endsAt")),
+    description: stringField(formData, "description") || undefined,
   });
   revalidatePath("/admin/promotions");
 }
 
 export async function updatePromotionAction(formData: FormData): Promise<void> {
-  const id = String(formData.get("id") ?? "").trim();
-  if (!id) return;
-  await adminService.updatePromotion(id, {
-    name: String(formData.get("name") ?? "").trim(),
-    discountPercent: String(formData.get("discountPercent") ?? "0"),
-    startsAt: new Date(String(formData.get("startsAt") ?? "")),
-    endsAt: new Date(String(formData.get("endsAt") ?? "")),
-    description: String(formData.get("description") ?? "").trim() || undefined,
+  await adminService.updatePromotion(stringField(formData, "id"), {
+    name: stringField(formData, "name"),
+    discountPercent: stringField(formData, "discountPercent") || "0",
+    startsAt: new Date(stringField(formData, "startsAt")),
+    endsAt: new Date(stringField(formData, "endsAt")),
+    description: stringField(formData, "description") || undefined,
   });
   revalidatePath("/admin/promotions");
+  revalidatePath(`/admin/promotions/${stringField(formData, "id")}`);
 }
 
 export async function setPromotionStatusAction(formData: FormData): Promise<void> {
-  const id = String(formData.get("id") ?? "").trim();
-  const status = String(formData.get("status") ?? "DRAFT");
+  const status = stringField(formData, "status");
   if (!["DRAFT", "ACTIVE", "STOPPED"].includes(status)) return;
-  await adminService.setPromotionStatus(id, status as "DRAFT" | "ACTIVE" | "STOPPED");
+  await adminService.setPromotionStatus(stringField(formData, "id"), status as "DRAFT" | "ACTIVE" | "STOPPED");
   revalidatePath("/admin/promotions");
+}
+
+export async function setPromotionGamesAction(formData: FormData): Promise<void> {
+  const id = stringField(formData, "id");
+  const gameIds = formData.getAll("gameIds").map((value) => String(value)).filter(Boolean);
+  await adminService.setPromotionGames(id, gameIds);
+  revalidatePath("/admin/promotions");
+  revalidatePath(`/admin/promotions/${id}`);
 }
 
 export async function deletePromotionAction(formData: FormData): Promise<void> {
-  const id = String(formData.get("id") ?? "").trim();
-  if (!id) return;
-  await adminService.deletePromotion(id);
+  await adminService.deletePromotion(stringField(formData, "id"));
   revalidatePath("/admin/promotions");
-}
-
-/**
- * Admin confirms or rejects a pending payment, acting as the mock gateway.
- * Only users with ADMIN role can invoke this (enforced in PaymentService).
- * Idempotent — re-approving an already SUCCEEDED payment is a no-op.
- */
-export async function adminCompletePaymentAction(formData: FormData): Promise<void> {
-  const orderId = String(formData.get("orderId") ?? "").trim();
-  if (!orderId) return;
-  const raw = String(formData.get("decision") ?? formData.get("succeeded") ?? "approve");
-  const succeeded = raw === "true" || raw === "approve" || raw === "SUCCEEDED";
-  await paymentService.adminCompleteMock(orderId, succeeded);
-  revalidatePath("/admin/orders");
-  revalidatePath("/orders");
+  redirect("/admin/promotions");
 }

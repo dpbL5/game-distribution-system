@@ -1,5 +1,7 @@
+import Link from "next/link";
+
 import { adminService } from "@/modules/admin/infrastructure/admin-service";
-import { createCategoryAction } from "@/modules/admin/presentation/actions";
+import { createCategoryAction, deleteCategoryAction } from "@/modules/admin/presentation/actions";
 import { StatusBadge } from "@/shared/ui/status-badge";
 import { formatStatus } from "@/shared/utils/format-status";
 
@@ -25,6 +27,10 @@ export default async function AdminCategoriesPage() {
             <input id="slug" name="slug" placeholder="category-slug" required />
           </div>
         </div>
+        <div className="field">
+          <label htmlFor="description">Mô tả</label>
+          <textarea id="description" name="description" placeholder="Mô tả thể loại (tùy chọn)" />
+        </div>
         <button className="button button-primary" type="submit">
           Thêm thể loại
         </button>
@@ -37,18 +43,34 @@ export default async function AdminCategoriesPage() {
               <th>Đường dẫn</th>
               <th>Game</th>
               <th>Trạng thái</th>
+              <th className="table-actions">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {categories.map((category) => (
               <tr key={category.id}>
-                <td>{category.name}</td>
+                <td>
+                  <Link href={`/admin/categories/${category.id}`} style={{ fontWeight: 700, textDecoration: "underline" }}>
+                    {category.name}
+                  </Link>
+                </td>
                 <td>{category.slug}</td>
                 <td>{category.gameCount}</td>
                 <td>
-                  <StatusBadge tone={category.isActive ? "success" : "warning"}>
-                    {formatStatus(category.isActive ? "ACTIVE" : "INACTIVE")}
-                  </StatusBadge>
+                  <StatusBadge tone={category.isActive ? "success" : "warning"}>{formatStatus(category.isActive ? "ACTIVE" : "INACTIVE")}</StatusBadge>
+                </td>
+                <td className="table-actions">
+                  <div style={{ display: "inline-flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
+                    <Link href={`/admin/categories/${category.id}`} className="button button-secondary">
+                      Xem / sửa
+                    </Link>
+                    <form action={deleteCategoryAction}>
+                      <input type="hidden" name="id" value={category.id} />
+                      <button className="button button-danger" type="submit">
+                        Xóa
+                      </button>
+                    </form>
+                  </div>
                 </td>
               </tr>
             ))}

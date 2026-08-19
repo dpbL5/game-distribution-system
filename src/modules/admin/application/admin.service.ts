@@ -1,6 +1,6 @@
 import "server-only";
 
-import { Decimal } from "@/shared/money/decimal";
+import { Prisma } from "@prisma/client";
 
 import { requireAdmin } from "@/modules/auth/application/guards";
 import { AppError } from "@/shared/errors/app-error";
@@ -19,9 +19,26 @@ export class AdminService {
     return this.repository.listCategories();
   }
 
+  async getCategory(id: string) {
+    await requireAdmin();
+    return this.repository.getCategory(id);
+  }
+
   async createCategory(input: { name: string; slug: string; description?: string }) {
     await requireAdmin();
+    this.assertCategory(input);
     return this.repository.createCategory(input);
+  }
+
+  async updateCategory(id: string, input: { name: string; slug: string; description?: string; isActive?: boolean }) {
+    await requireAdmin();
+    this.assertCategory(input);
+    return this.repository.updateCategory(id, input);
+  }
+
+  async deleteCategory(id: string) {
+    await requireAdmin();
+    return this.repository.deleteCategory(id);
   }
 
   async games() {
@@ -29,40 +46,9 @@ export class AdminService {
     return this.repository.listGames();
   }
 
-  async gameEditor(gameId: string) {
+  async getGame(id: string) {
     await requireAdmin();
-    const game = await this.repository.findGameForEdit(gameId);
-    if (!game) throw new AppError("GAME_NOT_FOUND", "Không tìm thấy game.", 404);
-    return game;
-  }
-
-  async updateGame(gameId: string, input: Parameters<AdminRepository["updateGame"]>[1]) {
-    const admin = await requireAdmin();
-    return this.repository.updateGame(gameId, input, admin.id);
-  }
-
-  async gameMedia(gameId: string) {
-    await requireAdmin();
-    await this.ensureGameExists(gameId);
-    return this.repository.listGameMedia(gameId);
-  }
-
-  async setGameCover(gameId: string, mediaId: string) {
-    await requireAdmin();
-    await this.repository.setGameCover(gameId, mediaId);
-  }
-
-  async deleteGameMedia(mediaId: string) {
-    const admin = await requireAdmin();
-    await this.repository.deleteGameMedia(mediaId, admin.id);
-  }
-
-  private async ensureGameExists(gameId: string) {
-    const games = await this.repository.listGames();
-    const exists = games.some((game) => game.id === gameId);
-    if (!exists) {
-      throw new AppError("GAME_NOT_FOUND", "Không tìm thấy game.", 404);
-    }
+    return this.repository.getGame(id);
   }
 
   async developers() {
@@ -70,23 +56,26 @@ export class AdminService {
     return this.repository.listDevelopers();
   }
 
-  async createDeveloper(input: { name: string; description?: string; website?: string; countryCode?: string }) {
+  async getDeveloper(id: string) {
     await requireAdmin();
-    const name = input.name.trim();
-    if (!name) throw new AppError("FORBIDDEN", "Tên nhà phát triển là bắt buộc.", 400);
-    return this.repository.createDeveloper({ ...input, name });
+    return this.repository.getDeveloper(id);
   }
 
-  async updateDeveloper(id: string, input: { name: string; description?: string; website?: string; countryCode?: string }) {
+  async createDeveloper(input: { name: string; description?: string; website?: string }) {
     await requireAdmin();
-    const name = input.name.trim();
-    if (!name) throw new AppError("FORBIDDEN", "Tên nhà phát triển là bắt buộc.", 400);
-    return this.repository.updateDeveloper(id, { ...input, name });
+    this.assertNamed(input.name);
+    return this.repository.createDeveloper(input);
+  }
+
+  async updateDeveloper(id: string, input: { name: string; description?: string; website?: string }) {
+    await requireAdmin();
+    this.assertNamed(input.name);
+    return this.repository.updateDeveloper(id, input);
   }
 
   async deleteDeveloper(id: string) {
-    const admin = await requireAdmin();
-    return this.repository.deleteDeveloper(id, admin.id);
+    await requireAdmin();
+    return this.repository.deleteDeveloper(id);
   }
 
   async publishers() {
@@ -94,38 +83,70 @@ export class AdminService {
     return this.repository.listPublishers();
   }
 
-  async createPublisher(input: { name: string; description?: string; website?: string; countryCode?: string }) {
+  async getPublisher(id: string) {
     await requireAdmin();
-    const name = input.name.trim();
-    if (!name) throw new AppError("FORBIDDEN", "Tên nhà phát hành là bắt buộc.", 400);
-    return this.repository.createPublisher({ ...input, name });
+    return this.repository.getPublisher(id);
   }
 
-  async updatePublisher(id: string, input: { name: string; description?: string; website?: string; countryCode?: string }) {
+  async createPublisher(input: { name: string; description?: string; website?: string }) {
     await requireAdmin();
-    const name = input.name.trim();
-    if (!name) throw new AppError("FORBIDDEN", "Tên nhà phát hành là bắt buộc.", 400);
-    return this.repository.updatePublisher(id, { ...input, name });
+    this.assertNamed(input.name);
+    return this.repository.createPublisher(input);
+  }
+
+  async updatePublisher(id: string, input: { name: string; description?: string; website?: string }) {
+    await requireAdmin();
+    this.assertNamed(input.name);
+    return this.repository.updatePublisher(id, input);
   }
 
   async deletePublisher(id: string) {
-    const admin = await requireAdmin();
-    return this.repository.deletePublisher(id, admin.id);
+    await requireAdmin();
+    return this.repository.deletePublisher(id);
   }
 
   async createGame(input: Parameters<AdminRepository["createGame"]>[0]) {
     await requireAdmin();
+    this.assertGame(input);
     return this.repository.createGame(input);
+  }
+
+  async updateGame(id: string, input: Parameters<AdminRepository["updateGame"]>[1]) {
+    await requireAdmin();
+    if (input.basePrice !== undefined) this.assertPrice(input.basePrice);
+    if (input.name !== undefined) this.assertNamed(input.name);
+    if (input.slug !== undefined) this.assertSlug(input.slug);
+    return this.repository.updateGame(id, input);
+  }
+
+  async deleteGame(id: string) {
+    await requireAdmin();
+    return this.repository.deleteGame(id);
   }
 
   async setGameStatus(gameId: string, status: Parameters<AdminRepository["setGameStatus"]>[1]) {
     const admin = await requireAdmin();
-    return (this.repository as unknown as { setGameStatus: (id: string, s: string, actorId: string) => Promise<void> }).setGameStatus(gameId, status, admin.id);
+    return this.repository.setGameStatus(gameId, status, admin.id);
+  }
+
+  async createGameMedia(input: { gameId: string; type: "IMAGE" | "VIDEO"; path: string; title?: string | null }) {
+    await requireAdmin();
+    return this.repository.createGameMedia(input);
+  }
+
+  async deleteGameMedia(id: string) {
+    await requireAdmin();
+    return this.repository.deleteGameMedia(id);
   }
 
   async promotions() {
     await requireAdmin();
     return this.repository.listPromotions();
+  }
+
+  async getPromotion(id: string) {
+    await requireAdmin();
+    return this.repository.getPromotion(id);
   }
 
   async createPromotion(
@@ -140,10 +161,9 @@ export class AdminService {
     id: string,
     input: { name: string; discountPercent: string; startsAt: Date; endsAt: Date; description?: string },
   ) {
-    const admin = await requireAdmin();
+    await requireAdmin();
     this.assertValidPromotion(input);
-    if (!input.name.trim()) throw new AppError("PROMOTION_INVALID", "Tên khuyến mãi là bắt buộc.", 422);
-    return this.repository.updatePromotion(id, { ...input, name: input.name.trim() }, admin.id);
+    return this.repository.updatePromotion(id, input);
   }
 
   async setPromotionStatus(id: string, status: "DRAFT" | "ACTIVE" | "STOPPED") {
@@ -151,45 +171,57 @@ export class AdminService {
     return this.repository.setPromotionStatus(id, status, admin.id);
   }
 
-  async deletePromotion(id: string) {
-    const admin = await requireAdmin();
-    return this.repository.deletePromotion(id, admin.id);
+  async setPromotionGames(id: string, gameIds: string[]) {
+    await requireAdmin();
+    return this.repository.setPromotionGames(id, gameIds);
   }
 
-  /**
-   * Enforces the promotion business rules from the spec (§1.6.8) and
-   * build-plan (§5.1): the window must be ordered and non-empty, and the
-   * discount must be strictly greater than 0 and at most 100. Rejecting the
-   * discount out of range also guarantees the discounted price can never be
-   * negative or free for a positive base price.
-   */
+  async deletePromotion(id: string) {
+    await requireAdmin();
+    return this.repository.deletePromotion(id);
+  }
+
   private assertValidPromotion(input: {
     discountPercent: string;
     startsAt: Date;
     endsAt: Date;
   }): void {
-    const discount = new Decimal(input.discountPercent);
+    const discount = new Prisma.Decimal(input.discountPercent);
     if (discount.isNegative() || discount.isZero()) {
-      throw new AppError(
-        "PROMOTION_INVALID",
-        "Mức giảm giá phải lớn hơn 0%.",
-        422,
-      );
+      throw new AppError("PROMOTION_INVALID", "Mức giảm giá phải lớn hơn 0%.", 422);
     }
     if (discount.greaterThan(100)) {
-      throw new AppError(
-        "PROMOTION_INVALID",
-        "Mức giảm giá không được vượt quá 100%.",
-        422,
-      );
+      throw new AppError("PROMOTION_INVALID", "Mức giảm giá không được vượt quá 100%.", 422);
     }
     if (input.endsAt <= input.startsAt) {
-      throw new AppError(
-        "PROMOTION_INVALID",
-        "Thời gian kết thúc phải sau thời gian bắt đầu.",
-        422,
-      );
+      throw new AppError("PROMOTION_INVALID", "Thời gian kết thúc phải sau thời gian bắt đầu.", 422);
     }
+  }
+
+  private assertCategory(input: { name: string; slug: string }): void {
+    this.assertNamed(input.name);
+    this.assertSlug(input.slug);
+  }
+
+  private assertGame(input: { name: string; slug: string; basePrice: string }): void {
+    this.assertNamed(input.name);
+    this.assertSlug(input.slug);
+    this.assertPrice(input.basePrice);
+  }
+
+  private assertNamed(name: string): void {
+    if (!name || name.trim().length < 2) throw new AppError("FORBIDDEN", "Tên phải có ít nhất 2 ký tự.", 422);
+  }
+
+  private assertSlug(slug: string): void {
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+      throw new AppError("FORBIDDEN", "Slug chỉ gồm chữ thường, số và dấu gạch ngang.", 422);
+    }
+  }
+
+  private assertPrice(value: string): void {
+    const price = new Prisma.Decimal(value);
+    if (price.isNegative()) throw new AppError("FORBIDDEN", "Giá không được âm.", 422);
   }
 
   async users() {
@@ -197,26 +229,12 @@ export class AdminService {
     return this.repository.listUsers();
   }
 
-  async updateUser(id: string, input: { displayName: string; role: "CUSTOMER" | "ADMIN" }) {
-    const admin = await requireAdmin();
-    const displayName = input.displayName.trim();
-    if (!displayName) throw new AppError("FORBIDDEN", "Tên hiển thị là bắt buộc.", 400);
-    if (!["CUSTOMER", "ADMIN"].includes(input.role)) throw new AppError("FORBIDDEN", "Vai trò không hợp lệ.", 400);
-    return this.repository.updateUser(id, { displayName, role: input.role }, admin.id);
-  }
-
-  async deleteUser(id: string) {
-    const admin = await requireAdmin();
-    if (id === admin.id) throw new AppError("FORBIDDEN", "Không thể tự xóa tài khoản của chính mình.", 403);
-    return this.repository.deleteUser(id, admin.id);
-  }
-
   async setUserStatus(userId: string, status: "ACTIVE" | "LOCKED") {
     const admin = await requireAdmin();
     if (userId === admin.id) {
       throw new AppError("FORBIDDEN", "Không thể tự khóa tài khoản của chính mình.", 403);
     }
-    return (this.repository as unknown as { setUserStatus: (id: string, s: string, actorId: string) => Promise<void> }).setUserStatus(userId, status, admin.id);
+    return this.repository.setUserStatus(userId, status, admin.id);
   }
 
   async orders() {
@@ -231,6 +249,6 @@ export class AdminService {
 
   async setReviewVisibility(reviewId: string, visibilityStatus: "VISIBLE" | "HIDDEN") {
     const admin = await requireAdmin();
-    return (this.repository as unknown as { setReviewVisibility: (id: string, s: string, actorId: string) => Promise<void> }).setReviewVisibility(reviewId, visibilityStatus, admin.id);
+    return this.repository.setReviewVisibility(reviewId, visibilityStatus, admin.id);
   }
 }

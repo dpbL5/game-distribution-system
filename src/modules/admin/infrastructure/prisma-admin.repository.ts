@@ -1,20 +1,34 @@
 import "server-only";
 
 import { prisma } from "@/infrastructure/database/prisma";
-import { localMediaStorage } from "@/infrastructure/storage/local-media-storage";
-import { AppError } from "@/shared/errors/app-error";
 import type {
   AdminCategory,
+  AdminCategoryDetail,
   AdminDashboard,
+  AdminDeveloperDetail,
   AdminGame,
-  AdminGameEditor,
-  AdminGameMedia,
-  AdminGameUpdateInput,
+  AdminGameDetail,
   AdminOrder,
+  AdminPromotion,
+  AdminPromotionDetail,
+  AdminPublisherDetail,
   AdminRepository,
   AdminReview,
   AdminUser,
+  CreateGameInput,
+  UpdateGameInput,
 } from "@/modules/admin/application/admin.repository";
+import { AppError } from "@/shared/errors/app-error";
+
+function mapPrismaError(error: unknown): never {
+  if (error && typeof error === "object" && "code" in error) {
+    const code = (error as { code?: string }).code;
+    if (code === "P2002") throw new AppError("FORBIDDEN", "Giá trị đã tồn tại (trùng unique).", 409);
+    if (code === "P2025") throw new AppError("FORBIDDEN", "Không tìm thấy bản ghi.", 404);
+    if (code === "P2003") throw new AppError("FORBIDDEN", "Không thể xóa do còn dữ liệu liên quan.", 409);
+  }
+  throw error;
+}
 
 export class PrismaAdminRepository implements AdminRepository {
   async dashboard(): Promise<AdminDashboard> {
@@ -61,8 +75,49 @@ export class PrismaAdminRepository implements AdminRepository {
     }));
   }
 
+  async getCategory(id: string): Promise<AdminCategoryDetail | null> {
+    const category = await prisma.category.findUnique({
+      where: { id },
+      include: { _count: { select: { gameLinks: true } } },
+    });
+    if (!category) return null;
+    return {
+      id: category.id,
+      name: category.name,
+      slug: category.slug,
+      description: category.description,
+      isActive: category.isActive,
+      gameCount: category._count.gameLinks,
+      createdAt: category.createdAt,
+      updatedAt: category.updatedAt,
+    };
+  }
+
   async createCategory(input: { name: string; slug: string; description?: string }): Promise<void> {
-    await prisma.category.create({ data: input });
+    try {
+      await prisma.category.create({ data: input });
+    } catch (error) {
+      mapPrismaError(error);
+    }
+  }
+
+  async updateCategory(
+    id: string,
+    input: { name: string; slug: string; description?: string; isActive?: boolean },
+  ): Promise<void> {
+    try {
+      await prisma.category.update({ where: { id }, data: input });
+    } catch (error) {
+      mapPrismaError(error);
+    }
+  }
+
+  async deleteCategory(id: string): Promise<void> {
+    try {
+      await prisma.category.delete({ where: { id } });
+    } catch (error) {
+      mapPrismaError(error);
+    }
   }
 
   async listGames(): Promise<AdminGame[]> {
@@ -89,13 +144,28 @@ export class PrismaAdminRepository implements AdminRepository {
     }));
   }
 
-  async findGameForEdit(gameId: string): Promise<AdminGameEditor | null> {
+  async getGame(id: string): Promise<AdminGameDetail | null> {
     const game = await prisma.game.findUnique({
-      where: { id: gameId },
-      include: {
-        developer: { select: { id: true, name: true } },
-        publisher: { select: { id: true, name: true } },
-        categoryLinks: { select: { categoryId: true } },
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        shortDescription: true,
+        description: true,
+        basePrice: true,
+        releaseDate: true,
+        coverPath: true,
+        heroPath: true,
+        ageRating: true,
+        status: true,
+        platforms: true,
+        developerId: true,
+        publisherId: true,
+        developer: { select: { name: true } },
+        publisher: { select: { name: true } },
+        categoryLinks: { select: { category: { select: { id: true, name: true } } } },
+        media: { select: { id: true, type: true, path: true, title: true, sortOrder: true }, orderBy: { sortOrder: "asc" } },
       },
     });
     if (!game) return null;
@@ -107,108 +177,18 @@ export class PrismaAdminRepository implements AdminRepository {
       description: game.description,
       basePrice: game.basePrice.toFixed(2),
       releaseDate: game.releaseDate,
-      platforms: game.platforms,
-      ageRating: game.ageRating,
       coverPath: game.coverPath,
+      heroPath: game.heroPath,
+      ageRating: game.ageRating,
       status: game.status,
+      platforms: game.platforms,
+      developerId: game.developerId,
+      publisherId: game.publisherId,
       developer: game.developer.name,
       publisher: game.publisher.name,
-      developerId: game.developer.id,
-      publisherId: game.publisher.id,
-      categoryIds: game.categoryLinks.map((link) => link.categoryId),
+      categories: game.categoryLinks.map((link) => link.category),
+      media: game.media,
     };
-  }
-
-  async updateGame(
-    gameId: string,
-    input: AdminGameUpdateInput,
-    actorId?: string,
-  ): Promise<void> {
-    await prisma.$transaction([
-      prisma.game.update({
-        where: { id: gameId },
-        data: {
-          name: input.name,
-          slug: input.slug,
-          shortDescription: input.shortDescription,
-          description: input.description,
-          basePrice: input.basePrice,
-          releaseDate: input.releaseDate,
-          platforms: input.platforms,
-          ageRating: input.ageRating,
-          developerId: input.developerId,
-          publisherId: input.publisherId,
-          status: input.status,
-        },
-      }),
-      prisma.gameCategory.deleteMany({ where: { gameId } }),
-      ...input.categoryIds.map((categoryId) =>
-        prisma.gameCategory.create({ data: { gameId, categoryId } }),
-      ),
-    ]);
-    if (actorId) {
-      await prisma.auditLog.create({
-        data: {
-          actorId,
-          action: "GAME_UPDATE",
-          targetType: "Game",
-          targetId: gameId,
-          outcome: input.status,
-        },
-      });
-    }
-  }
-
-  async listGameMedia(gameId: string): Promise<AdminGameMedia[]> {
-    const game = await prisma.game.findUnique({
-      where: { id: gameId },
-      select: { id: true, coverPath: true },
-    });
-    if (!game) throw new AppError("GAME_NOT_FOUND", "Không tìm thấy game.", 404);
-    const media = await prisma.gameMedia.findMany({
-      where: { gameId },
-      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-    });
-    return media.map((item) => ({
-      id: item.id,
-      type: item.type,
-      path: item.path,
-      title: item.title,
-      sortOrder: item.sortOrder,
-      isCover: item.path === game.coverPath,
-      createdAt: item.createdAt,
-    }));
-  }
-
-  async setGameCover(gameId: string, mediaId: string): Promise<void> {
-    const media = await prisma.gameMedia.findFirst({ where: { id: mediaId, gameId } });
-    if (!media) throw new AppError("GAME_NOT_FOUND", "Không tìm thấy media của game.", 404);
-    await prisma.game.update({ where: { id: gameId }, data: { coverPath: media.path } });
-  }
-
-  async deleteGameMedia(mediaId: string, actorId?: string): Promise<void> {
-    const media = await prisma.gameMedia.findUnique({ where: { id: mediaId } });
-    if (!media) throw new AppError("GAME_NOT_FOUND", "Không tìm thấy media.", 404);
-    await localMediaStorage.delete(media.path);
-    if (media.previewPath) await localMediaStorage.delete(media.previewPath);
-    await prisma.$transaction([
-      prisma.gameMedia.delete({ where: { id: mediaId } }),
-      prisma.game.updateMany({
-        where: { coverPath: media.path },
-        data: { coverPath: null },
-      }),
-    ]);
-    if (actorId) {
-      await prisma.auditLog.create({
-        data: {
-          actorId,
-          action: "GAME_MEDIA_DELETE",
-          targetType: "GameMedia",
-          targetId: mediaId,
-          outcome: "DELETED",
-        },
-      });
-    }
   }
 
   listDevelopers(): Promise<{ id: string; name: string }[]> {
@@ -218,22 +198,31 @@ export class PrismaAdminRepository implements AdminRepository {
     });
   }
 
-  async createDeveloper(input: { name: string; description?: string; website?: string; countryCode?: string }): Promise<void> {
-    await prisma.developer.create({ data: input });
+  async getDeveloper(id: string): Promise<AdminDeveloperDetail | null> {
+    return prisma.developer.findUnique({ where: { id } });
   }
 
-  async updateDeveloper(id: string, input: { name: string; description?: string; website?: string; countryCode?: string }): Promise<void> {
-    await prisma.developer.update({ where: { id }, data: input });
+  async createDeveloper(input: { name: string; description?: string; website?: string }): Promise<void> {
+    try {
+      await prisma.developer.create({ data: input });
+    } catch (error) {
+      mapPrismaError(error);
+    }
   }
 
-  async deleteDeveloper(id: string, actorId?: string): Promise<void> {
-    const used = await prisma.game.count({ where: { developerId: id } });
-    if (used > 0) throw new AppError("FORBIDDEN", "Không thể xóa nhà phát triển còn game tham chiếu.", 409);
-    await prisma.developer.delete({ where: { id } });
-    if (actorId) {
-      await prisma.auditLog.create({
-        data: { actorId, action: "DEVELOPER_DELETE", targetType: "Developer", targetId: id, outcome: "DELETED" },
-      });
+  async updateDeveloper(id: string, input: { name: string; description?: string; website?: string }): Promise<void> {
+    try {
+      await prisma.developer.update({ where: { id }, data: input });
+    } catch (error) {
+      mapPrismaError(error);
+    }
+  }
+
+  async deleteDeveloper(id: string): Promise<void> {
+    try {
+      await prisma.developer.delete({ where: { id } });
+    } catch (error) {
+      mapPrismaError(error);
     }
   }
 
@@ -244,37 +233,74 @@ export class PrismaAdminRepository implements AdminRepository {
     });
   }
 
-  async createPublisher(input: { name: string; description?: string; website?: string; countryCode?: string }): Promise<void> {
-    await prisma.publisher.create({ data: input });
+  async getPublisher(id: string): Promise<AdminPublisherDetail | null> {
+    return prisma.publisher.findUnique({ where: { id } });
   }
 
-  async updatePublisher(id: string, input: { name: string; description?: string; website?: string; countryCode?: string }): Promise<void> {
-    await prisma.publisher.update({ where: { id }, data: input });
-  }
-
-  async deletePublisher(id: string, actorId?: string): Promise<void> {
-    const used = await prisma.game.count({ where: { publisherId: id } });
-    if (used > 0) throw new AppError("FORBIDDEN", "Không thể xóa nhà phát hành còn game tham chiếu.", 409);
-    await prisma.publisher.delete({ where: { id } });
-    if (actorId) {
-      await prisma.auditLog.create({
-        data: { actorId, action: "PUBLISHER_DELETE", targetType: "Publisher", targetId: id, outcome: "DELETED" },
-      });
+  async createPublisher(input: { name: string; description?: string; website?: string }): Promise<void> {
+    try {
+      await prisma.publisher.create({ data: input });
+    } catch (error) {
+      mapPrismaError(error);
     }
   }
 
-  async createGame(input: {
-    name: string;
-    slug: string;
-    shortDescription: string;
-    description: string;
-    basePrice: string;
-    releaseDate: Date;
-    platforms: string[];
-    developerId: string;
-    publisherId: string;
-  }): Promise<void> {
-    await prisma.game.create({ data: { ...input, status: "DRAFT" } });
+  async updatePublisher(id: string, input: { name: string; description?: string; website?: string }): Promise<void> {
+    try {
+      await prisma.publisher.update({ where: { id }, data: input });
+    } catch (error) {
+      mapPrismaError(error);
+    }
+  }
+
+  async deletePublisher(id: string): Promise<void> {
+    try {
+      await prisma.publisher.delete({ where: { id } });
+    } catch (error) {
+      mapPrismaError(error);
+    }
+  }
+
+  async createGame(input: CreateGameInput): Promise<void> {
+    try {
+      await prisma.game.create({ data: { ...input, status: "DRAFT" } });
+    } catch (error) {
+      mapPrismaError(error);
+    }
+  }
+
+  async updateGame(id: string, input: UpdateGameInput): Promise<void> {
+    const { categoryIds, ...rest } = input;
+    try {
+      await prisma.$transaction(async (transaction) => {
+        await transaction.game.update({ where: { id }, data: rest });
+        if (categoryIds !== undefined) {
+          await transaction.gameCategory.deleteMany({ where: { gameId: id } });
+          if (categoryIds.length > 0) {
+            await transaction.gameCategory.createMany({
+              data: categoryIds.map((categoryId) => ({ gameId: id, categoryId })),
+            });
+          }
+        }
+      });
+    } catch (error) {
+      mapPrismaError(error);
+    }
+  }
+
+  async deleteGame(id: string): Promise<void> {
+    try {
+      const media = await prisma.gameMedia.findMany({ where: { gameId: id }, select: { path: true } });
+      await prisma.$transaction(async (transaction) => {
+        await transaction.gameMedia.deleteMany({ where: { gameId: id } });
+        await transaction.gameCategory.deleteMany({ where: { gameId: id } });
+        await transaction.gamePromotion.deleteMany({ where: { gameId: id } });
+        await transaction.game.delete({ where: { id } });
+      });
+      void media;
+    } catch (error) {
+      mapPrismaError(error);
+    }
   }
 
   async setGameStatus(
@@ -290,7 +316,23 @@ export class PrismaAdminRepository implements AdminRepository {
     }
   }
 
-  async listPromotions() {
+  async createGameMedia(input: { gameId: string; type: "IMAGE" | "VIDEO"; path: string; title?: string | null }): Promise<{ id: string }> {
+    const count = await prisma.gameMedia.count({ where: { gameId: input.gameId } });
+    const media = await prisma.gameMedia.create({
+      data: { gameId: input.gameId, type: input.type, path: input.path, title: input.title ?? null, sortOrder: count },
+      select: { id: true },
+    });
+    return media;
+  }
+
+  async deleteGameMedia(id: string): Promise<string | null> {
+    const media = await prisma.gameMedia.findUnique({ where: { id }, select: { path: true } });
+    if (!media) return null;
+    await prisma.gameMedia.delete({ where: { id } });
+    return media.path;
+  }
+
+  async listPromotions(): Promise<AdminPromotion[]> {
     const promotions = await prisma.promotion.findMany({
       orderBy: { startsAt: "desc" },
       include: { _count: { select: { gameLinks: true } } },
@@ -306,6 +348,26 @@ export class PrismaAdminRepository implements AdminRepository {
     }));
   }
 
+  async getPromotion(id: string): Promise<AdminPromotionDetail | null> {
+    const promotion = await prisma.promotion.findUnique({
+      where: { id },
+      include: { gameLinks: { select: { gameId: true } } },
+    });
+    if (!promotion) return null;
+    return {
+      id: promotion.id,
+      name: promotion.name,
+      description: promotion.description,
+      discountPercent: promotion.discountPercent.toFixed(2),
+      startsAt: promotion.startsAt,
+      endsAt: promotion.endsAt,
+      status: promotion.status,
+      gameCount: promotion.gameLinks.length,
+      createdById: promotion.createdById,
+      gameIds: promotion.gameLinks.map((link) => link.gameId),
+    };
+  }
+
   async createPromotion(input: {
     createdById: string;
     name: string;
@@ -314,19 +376,21 @@ export class PrismaAdminRepository implements AdminRepository {
     endsAt: Date;
     description?: string;
   }): Promise<void> {
-    await prisma.promotion.create({ data: { ...input, status: "DRAFT" } });
+    try {
+      await prisma.promotion.create({ data: { ...input, status: "DRAFT" } });
+    } catch (error) {
+      mapPrismaError(error);
+    }
   }
 
   async updatePromotion(
     id: string,
     input: { name: string; discountPercent: string; startsAt: Date; endsAt: Date; description?: string },
-    actorId?: string,
   ): Promise<void> {
-    await prisma.promotion.update({ where: { id }, data: input });
-    if (actorId) {
-      await prisma.auditLog.create({
-        data: { actorId, action: "PROMOTION_UPDATE", targetType: "Promotion", targetId: id, outcome: "UPDATED" },
-      });
+    try {
+      await prisma.promotion.update({ where: { id }, data: input });
+    } catch (error) {
+      mapPrismaError(error);
     }
   }
 
@@ -339,12 +403,26 @@ export class PrismaAdminRepository implements AdminRepository {
     }
   }
 
-  async deletePromotion(id: string, actorId?: string): Promise<void> {
-    await prisma.$transaction([prisma.gamePromotion.deleteMany({ where: { promotionId: id } }), prisma.promotion.delete({ where: { id } })]);
-    if (actorId) {
-      await prisma.auditLog.create({
-        data: { actorId, action: "PROMOTION_DELETE", targetType: "Promotion", targetId: id, outcome: "DELETED" },
+  async setPromotionGames(id: string, gameIds: string[]): Promise<void> {
+    await prisma.$transaction(async (transaction) => {
+      await transaction.gamePromotion.deleteMany({ where: { promotionId: id } });
+      if (gameIds.length > 0) {
+        await transaction.gamePromotion.createMany({
+          data: gameIds.map((gameId) => ({ gameId, promotionId: id })),
+          skipDuplicates: true,
+        });
+      }
+    });
+  }
+
+  async deletePromotion(id: string): Promise<void> {
+    try {
+      await prisma.$transaction(async (transaction) => {
+        await transaction.gamePromotion.deleteMany({ where: { promotionId: id } });
+        await transaction.promotion.delete({ where: { id } });
       });
+    } catch (error) {
+      mapPrismaError(error);
     }
   }
 
@@ -361,37 +439,6 @@ export class PrismaAdminRepository implements AdminRepository {
         createdAt: true,
       },
     });
-  }
-
-  async updateUser(id: string, input: { displayName: string; role: "CUSTOMER" | "ADMIN" }, actorId?: string): Promise<void> {
-    await prisma.user.update({ where: { id }, data: { displayName: input.displayName, role: input.role } });
-    if (actorId) {
-      await prisma.auditLog.create({
-        data: { actorId, action: "USER_UPDATE", targetType: "User", targetId: id, outcome: input.role },
-      });
-    }
-  }
-
-  async deleteUser(id: string, actorId?: string): Promise<void> {
-    const orderCount = await prisma.order.count({ where: { userId: id } });
-    if (orderCount > 0) throw new AppError("FORBIDDEN", "Không thể xóa người dùng đã có đơn hàng.", 409);
-    await prisma.$transaction([
-      prisma.session.deleteMany({ where: { userId: id } }),
-      prisma.passwordResetToken.deleteMany({ where: { userId: id } }),
-      prisma.cartItem.deleteMany({ where: { cart: { userId: id } } }),
-      prisma.cart.deleteMany({ where: { userId: id } }),
-      prisma.wishlistItem.deleteMany({ where: { wishlist: { userId: id } } }),
-      prisma.wishlist.deleteMany({ where: { userId: id } }),
-      prisma.libraryItem.deleteMany({ where: { userId: id } }),
-      prisma.review.deleteMany({ where: { userId: id } }),
-      prisma.auditLog.deleteMany({ where: { actorId: id } }),
-      prisma.user.delete({ where: { id } }),
-    ]);
-    if (actorId) {
-      await prisma.auditLog.create({
-        data: { actorId, action: "USER_DELETE", targetType: "User", targetId: id, outcome: "DELETED" },
-      });
-    }
   }
 
   async setUserStatus(userId: string, status: "ACTIVE" | "LOCKED", actorId?: string): Promise<void> {

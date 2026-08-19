@@ -1,11 +1,7 @@
-import { Building2 } from "lucide-react";
+import Link from "next/link";
 
 import { adminService } from "@/modules/admin/infrastructure/admin-service";
-import {
-  createPublisherAction,
-  deletePublisherAction,
-  updatePublisherAction,
-} from "@/modules/admin/presentation/actions";
+import { createPublisherAction, deletePublisherAction } from "@/modules/admin/presentation/actions";
 
 export default async function AdminPublishersPage() {
   const publishers = await adminService.publishers();
@@ -15,58 +11,66 @@ export default async function AdminPublishersPage() {
         <div>
           <span className="eyebrow">DANH MỤC</span>
           <h1>Nhà phát hành</h1>
-          <p className="lede">Tạo, sửa và xóa nhà phát hành. Không thể xóa khi còn game tham chiếu.</p>
         </div>
       </div>
-
       <form className="panel stack" action={createPublisherAction}>
         <h2>Thêm nhà phát hành</h2>
         <div className="admin-form-grid">
           <div className="field">
-            <label htmlFor="pub-name">Tên nhà phát hành</label>
-            <input id="pub-name" name="name" placeholder="Tên nhà phát hành" required />
+            <label htmlFor="name">Tên</label>
+            <input id="name" name="name" placeholder="Tên nhà phát hành" required />
           </div>
           <div className="field">
-            <label htmlFor="pub-website">Website (tùy chọn)</label>
-            <input id="pub-website" name="website" placeholder="https://example.com" />
+            <label htmlFor="website">Website</label>
+            <input id="website" name="website" placeholder="https://..." />
           </div>
         </div>
+        <div className="field">
+          <label htmlFor="description">Mô tả</label>
+          <textarea id="description" name="description" placeholder="Mô tả (tùy chọn)" />
+        </div>
         <button className="button button-primary" type="submit">
-          Tạo
+          Thêm
         </button>
       </form>
-
       {publishers.length === 0 ? (
         <div className="panel empty-state">
           <p className="muted">Chưa có nhà phát hành nào trong hệ thống.</p>
         </div>
       ) : (
-        <div className="card-grid">
-          {publishers.map((publisher) => (
-            <div className="panel stack" key={publisher.id}>
-              <span className="metric-icon" aria-hidden="true">
-                <Building2 size={18} strokeWidth={2.25} />
-              </span>
-              <h2>{publisher.name}</h2>
-              <span className="muted small">Nhà phát hành</span>
-              <form className="stack" action={updatePublisherAction}>
-                <input type="hidden" name="id" value={publisher.id} />
-                <div className="field">
-                  <label htmlFor={`pub-edit-${publisher.id}`}>Sửa tên</label>
-                  <input id={`pub-edit-${publisher.id}`} name="name" defaultValue={publisher.name} required />
-                </div>
-                <button className="button button-secondary" type="submit">
-                  Lưu
-                </button>
-              </form>
-              <form action={deletePublisherAction}>
-                <input type="hidden" name="id" value={publisher.id} />
-                <button className="button button-danger" type="submit">
-                  Xóa
-                </button>
-              </form>
-            </div>
-          ))}
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Tên</th>
+                <th className="table-actions">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              {publishers.map((publisher) => (
+                <tr key={publisher.id}>
+                  <td>
+                    <Link href={`/admin/publishers/${publisher.id}`} style={{ fontWeight: 700, textDecoration: "underline" }}>
+                      {publisher.name}
+                    </Link>
+                  </td>
+                  <td className="table-actions">
+                    <div style={{ display: "inline-flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
+                      <Link href={`/admin/publishers/${publisher.id}`} className="button button-secondary">
+                        Xem / sửa
+                      </Link>
+                      <form action={deletePublisherAction}>
+                        <input type="hidden" name="id" value={publisher.id} />
+                        <button className="button button-danger" type="submit">
+                          Xóa
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </main>
