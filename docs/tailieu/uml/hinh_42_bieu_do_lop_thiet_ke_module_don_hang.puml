@@ -1,0 +1,57 @@
+@startuml
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+title Biểu đồ lớp thiết kế module Đơn hàng\nMức mô hình: Implementation
+class CheckoutClient <<Client Component>> {
+  + confirmCheckout(): void
+}
+class OrderServerEntry <<Server Action>> {
+  + checkout(): Promise<ActionResult<OrderDto>>
+  + getOrders(): Promise<OrderDto[*]>
+}
+class OrderService <<service>> {
+  + checkout(userId: String): Promise<Order>
+  + getOrders(userId: String): Promise<OrderDto[*]>
+}
+interface IOrderRepository <<interface>> {
+  + createWithItems(data: CreateOrderData): Promise<Order>
+  + findByUserId(userId: String): Promise<Order[*]>
+  + markPaid(orderId: String, tx?: TransactionClient): Promise<void>
+}
+class PrismaOrderRepository <<repository>> { - prisma: PrismaClient }
+class CartService <<module API>> { + getCheckoutCart(userId: String): Promise<CartDto> }
+class PromotionService <<module API>> { + getPrice(gameId: String, at: DateTime): Promise<Money> }
+class LibraryService <<module API>> { + hasGame(userId: String, gameId: String): Promise<Boolean> }
+class PrismaClient <<infrastructure>>
+class Order <<Prisma Model>> {
+  + id: String
+  + userId: String
+  + totalAmount: Decimal
+  + status: OrderStatus
+  + createdAt: DateTime
+  + paidAt: DateTime?
+}
+class OrderItem <<Prisma Model>> {
+  + id: String
+  + orderId: String
+  + gameId: String
+  + originalPrice: Decimal
+  + discountAmount: Decimal
+  + paidPrice: Decimal
+}
+
+CheckoutClient ..> OrderServerEntry : gọi
+OrderServerEntry ..> OrderService : điều phối
+OrderService ..> IOrderRepository : sử dụng
+OrderService ..> CartService : đọc giỏ hàng
+OrderService ..> PromotionService : chốt giá
+OrderService ..> LibraryService : kiểm tra sở hữu
+PrismaOrderRepository ..|> IOrderRepository : implements
+PrismaOrderRepository ..> PrismaClient : truy cập / transaction
+PrismaOrderRepository ..> Order : ánh xạ
+PrismaOrderRepository ..> OrderItem : ánh xạ
+Order "1" *-- "1..*" OrderItem : gồm
+@enduml

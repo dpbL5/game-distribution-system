@@ -1,0 +1,26 @@
+@startuml
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+title Biểu đồ lớp phân tích module Thư viện\nMức mô hình: Specification
+class LibraryPage <<boundary>> {
+  + viewLibrary()
+  + selectGame(gameId)
+}
+class LibraryController <<control>> {
+  + getLibrary(userId): LibraryItem[*]
+  + hasGame(userId, gameId): Boolean
+}
+class User <<entity>>
+class Game <<entity>> { name }
+class OrderItem <<entity>> { paidPrice }
+class LibraryItem <<entity>> { purchasedAt\nstatus }
+
+LibraryPage ..> LibraryController : gọi
+LibraryController ..> LibraryItem : truy vấn
+User "1" -- "0..*" LibraryItem : sở hữu
+LibraryItem "0..*" -- "1" Game : cấp quyền với
+OrderItem "1" -- "0..1" LibraryItem : nguồn cấp quyền
+@enduml

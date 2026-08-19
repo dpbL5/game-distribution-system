@@ -43,7 +43,16 @@ export default async function WishlistPage() {
                 <h2>{item.game.name}</h2>
               </Link>
               <div className="price-row">
-                <strong className="price">{formatMoney(item.game.basePrice)}</strong>
+                {item.game.discountPercent !== "0.00" ? (
+                  <span className="price">
+                    <strong>{formatMoney(item.game.currentPrice)}</strong>{" "}
+                    <span className="muted small price-strike">
+                      {formatMoney(item.game.basePrice)}
+                    </span>
+                  </span>
+                ) : (
+                  <strong className="price">{formatMoney(item.game.basePrice)}</strong>
+                )}
                 <form action={removeFromWishlistAction}>
                   <input type="hidden" name="itemId" value={item.itemId} />
                   <button className="button button-ghost" type="submit">

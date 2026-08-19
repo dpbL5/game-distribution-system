@@ -1,0 +1,40 @@
+@startuml
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam ParticipantPadding 18
+skinparam BoxPadding 8
+skinparam maxMessageSize 75
+hide footbox
+autonumber
+actor Customer
+boundary "OrdersPage" as UI
+control "OrderQueryService" as Service
+entity "OrderRepository" as Repo
+participant "Prisma" as Prisma
+database "PostgreSQL" as DB
+
+Customer -> UI: Mở lịch sử đơn hàng
+UI -> Service: getUserOrders(userId, page)
+Service -> Repo: findByUser(userId, page)
+Repo -> Prisma: order.findMany(include items/payment)
+Prisma -> DB: SELECT orders + relations
+DB --> Prisma: Orders
+Prisma --> Repo: Orders
+Repo --> Service: Orders
+Service -> Service: mapToOrderSummaryDTO()
+Service --> UI: OrderSummaryDTO[]
+UI --> Customer: Hiển thị lịch sử đơn hàng
+opt Chọn một đơn hàng
+  Customer -> UI: Xem chi tiết orderId
+  UI -> Service: getUserOrderDetail(userId, orderId)
+  Service -> Repo: findOwnedOrder(userId, orderId)
+  Repo -> Prisma: order.findFirst(...)
+  Prisma -> DB: SELECT order detail
+  DB --> Prisma: Order | null
+  Prisma --> Repo: Order | null
+  Repo --> Service: Order | null
+  Service --> UI: OrderDetailDTO | NOT_FOUND
+  UI --> Customer: Hiển thị chi tiết
+end
+@enduml

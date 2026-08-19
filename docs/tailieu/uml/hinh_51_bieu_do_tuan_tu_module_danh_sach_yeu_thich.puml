@@ -1,0 +1,22 @@
+@startuml
+actor Customer
+participant WishlistClient
+participant WishlistServerEntry
+participant WishlistService
+participant GameService
+participant WishlistRepository
+participant Prisma
+database PostgreSQL
+Customer -> WishlistClient : thêm vào danh sách yêu thích
+WishlistClient -> WishlistServerEntry : add(gameId)
+WishlistServerEntry -> WishlistService : add(userId, gameId)
+WishlistService -> GameService : kiểm tra Game
+WishlistService -> WishlistRepository : exists()
+WishlistRepository --> WishlistService : false
+WishlistService -> WishlistRepository : create()
+WishlistRepository -> Prisma : create
+Prisma -> PostgreSQL : INSERT
+PostgreSQL --> Prisma : OK
+Prisma --> WishlistRepository : item
+WishlistRepository --> WishlistClient : kết quả
+@enduml

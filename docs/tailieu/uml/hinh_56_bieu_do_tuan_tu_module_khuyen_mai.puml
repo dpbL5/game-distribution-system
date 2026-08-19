@@ -1,0 +1,19 @@
+@startuml
+actor Administrator
+participant PromotionClient
+participant PromotionServerEntry
+participant PromotionService
+participant PromotionRepository
+participant Prisma
+database PostgreSQL
+Administrator -> PromotionClient : tạo khuyến mãi
+PromotionClient -> PromotionServerEntry : createPromotion(data)
+PromotionServerEntry -> PromotionService : create(data)
+PromotionService -> PromotionService : kiểm tra thời gian và mức giảm
+PromotionService -> PromotionRepository : create()
+PromotionRepository -> Prisma : transaction
+Prisma -> PostgreSQL : INSERT Promotion + GamePromotion
+PostgreSQL --> Prisma : commit
+Prisma --> PromotionRepository : Promotion
+PromotionRepository --> PromotionClient : kết quả
+@enduml

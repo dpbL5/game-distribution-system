@@ -1,0 +1,15 @@
+@startuml
+actor Customer
+participant "Hệ thống" as System
+actor "Cổng thanh toán" as Gateway
+Customer -> System : xác nhận checkout
+System -> System : kiểm tra giỏ, giá, khuyến mãi, sở hữu
+System -> Gateway : yêu cầu thanh toán
+Gateway --> System : kết quả thanh toán
+alt thành công
+  System -> System : cập nhật Order/Payment và cấp Library Item
+  System --> Customer : thanh toán thành công
+else thất bại
+  System --> Customer : thanh toán thất bại
+end
+@enduml

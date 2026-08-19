@@ -1,0 +1,49 @@
+@startuml
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+title Biểu đồ lớp thiết kế module Khuyến mãi\nMức mô hình: Implementation
+class PromotionClient <<Client Component>> {
+  + submitPromotion(input: PromotionInput): void
+}
+class PromotionServerEntry <<Server Action>> {
+  + create(input: PromotionInput): Promise<ActionResult>
+  + update(id: String, input: PromotionInput): Promise<ActionResult>
+}
+class PromotionService <<service>> {
+  + create(adminId: String, input: PromotionInput): Promise<PromotionDto>
+  + update(adminId: String, id: String, input: PromotionInput): Promise<PromotionDto>
+  + getPrice(gameId: String, at: DateTime): Promise<Money>
+}
+interface IPromotionRepository <<interface>> {
+  + create(data: PromotionData): Promise<Promotion>
+  + update(id: String, data: PromotionData): Promise<Promotion>
+  + findActiveForGame(gameId: String, at: DateTime): Promise<Promotion[*]>
+}
+class PrismaPromotionRepository <<repository>> { - prisma: PrismaClient }
+class PrismaClient <<infrastructure>>
+class Promotion <<Prisma Model>> {
+  + id: String
+  + name: String
+  + discountValue: Decimal
+  + startAt: DateTime
+  + endAt: DateTime
+  + status: PromotionStatus
+}
+class GamePromotion <<Prisma Model>> {
+  + id: String
+  + gameId: String
+  + promotionId: String
+}
+
+PromotionClient ..> PromotionServerEntry : gọi
+PromotionServerEntry ..> PromotionService : điều phối
+PromotionService ..> IPromotionRepository : sử dụng
+PrismaPromotionRepository ..|> IPromotionRepository : implements
+PrismaPromotionRepository ..> PrismaClient : truy cập / transaction
+PrismaPromotionRepository ..> Promotion : ánh xạ
+PrismaPromotionRepository ..> GamePromotion : ánh xạ
+Promotion "1" *-- "0..*" GamePromotion : phạm vi áp dụng
+@enduml

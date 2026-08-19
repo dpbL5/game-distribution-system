@@ -26,6 +26,12 @@ export class OrderService {
 
     const quote = await cartService.quote();
     if (quote.items.length === 0) throw new AppError("CART_EMPTY", "Giỏ hàng đang trống.", 409);
+    // Refuse checkout when any cart line is no longer purchasable (the game
+    // was hidden or archived after being added). This keeps unavailable games
+    // from becoming paid orders, per AGENTS.md §6 / build-plan §6.2.
+    if (quote.items.some((line) => !line.available)) {
+      throw new AppError("GAME_NOT_AVAILABLE", "Một hoặc nhiều game trong giỏ không còn bán.", 409);
+    }
 
     if (input.expectedQuote) {
       const expected = safeParseQuote(input.expectedQuote);

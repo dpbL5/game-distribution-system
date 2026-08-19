@@ -1,0 +1,89 @@
+@startuml
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam ParticipantPadding 18
+skinparam BoxPadding 8
+skinparam maxMessageSize 75
+hide footbox
+autonumber
+actor Customer
+boundary "CheckoutPage\n(Client)" as UI
+control "checkoutAction" as Action
+control "CheckoutService" as Checkout
+control "CartService" as Cart
+control "GameService" as Game
+control "LibraryService" as Library
+control "PromotionService" as Promo
+control "OrderService" as Order
+control "PaymentService" as Payment
+entity "Order/Payment Repositories" as Repo
+participant "Prisma" as Prisma
+database "PostgreSQL" as DB
+participant "PaymentGatewayAdapter" as Adapter
+participant "Payment Gateway" as Gateway
+
+Customer -> UI: Xác nhận thanh toán
+UI -> Action: checkout()
+Action -> Action: requireAuthenticatedUser()
+Action -> Checkout: checkout(userId)
+Checkout -> Cart: getActiveCart(userId)
+Cart --> Checkout: Cart + items
+alt Cart rỗng
+  Checkout --> Action: EMPTY_CART
+else Có sản phẩm
+  loop Mỗi CartItem
+    Checkout -> Game: getPurchasableGame(gameId)
+    Game --> Checkout: Game
+    Checkout -> Library: hasGame(userId, gameId)
+    Library --> Checkout: owned?
+    Checkout -> Promo: resolvePrice(gameId)
+    Promo --> Checkout: paidPrice
+  end
+  Checkout -> Order: createPendingOrder(snapshotItems)
+  Order -> Repo: create Order + OrderItems
+  Repo -> Prisma: $transaction(create order/items)
+  Prisma -> DB: BEGIN / INSERT / COMMIT
+  DB --> Prisma: Order PENDING
+  Prisma --> Repo: Order
+  Repo --> Order: Order
+  Order --> Checkout: Order
+  Checkout -> Payment: createPendingPayment(order)
+  Payment -> Repo: create Payment(PENDING)
+  Repo -> Prisma: payment.create(...)
+  Prisma -> DB: INSERT payment
+  DB --> Prisma: Payment
+  Prisma --> Repo: Payment
+  Repo --> Payment: Payment
+  note over Payment,Gateway
+    Lời gọi Payment Gateway nằm ngoài Prisma transaction
+  end note
+  Payment -> Adapter: pay(orderId, amount)
+  Adapter -> Gateway: Yêu cầu thanh toán
+  Gateway --> Adapter: Kết quả giao dịch
+  Adapter --> Payment: PaymentResult
+  alt Thanh toán thất bại
+    Payment -> Repo: markFailed(paymentId)
+    Repo -> Prisma: payment.update(FAILED)
+    Prisma -> DB: UPDATE payment
+    Payment --> Checkout: PAYMENT_FAILED
+    Checkout --> Action: PAYMENT_FAILED
+  else Thanh toán thành công
+    Payment -> Repo: finalizePurchase(userId, orderId, result)
+    Repo -> Prisma: $transaction(...)
+    Prisma -> DB: BEGIN
+    Prisma -> DB: UPDATE Payment = SUCCESS
+    Prisma -> DB: UPDATE Order = PAID
+    Prisma -> DB: INSERT LibraryItems
+    Prisma -> DB: DELETE purchased CartItems
+    Prisma -> DB: COMMIT
+    DB --> Prisma: committed
+    Prisma --> Repo: success
+    Repo --> Payment: success
+    Payment --> Checkout: success
+    Checkout --> Action: CheckoutResult
+  end
+end
+Action --> UI: result
+UI --> Customer: Hiển thị kết quả thanh toán
+@enduml

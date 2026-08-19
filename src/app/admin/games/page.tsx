@@ -39,7 +39,12 @@ export default async function AdminGamesPage() {
           </div>
           <div className="field">
             <label htmlFor="shortDescription">Mô tả ngắn</label>
-            <input id="shortDescription" name="shortDescription" placeholder="Mô tả ngắn" required />
+            <input
+              id="shortDescription"
+              name="shortDescription"
+              placeholder="Mô tả ngắn"
+              required
+            />
           </div>
           <div className="field">
             <label htmlFor="basePrice">Giá gốc</label>
@@ -59,7 +64,13 @@ export default async function AdminGamesPage() {
           </div>
           <div className="field">
             <label htmlFor="platforms">Nền tảng</label>
-            <input id="platforms" name="platforms" placeholder="PC, PlayStation" defaultValue="PC" required />
+            <input
+              id="platforms"
+              name="platforms"
+              placeholder="PC, PlayStation"
+              defaultValue="PC"
+              required
+            />
           </div>
           <div className="field">
             <label htmlFor="developerId">Nhà phát triển</label>

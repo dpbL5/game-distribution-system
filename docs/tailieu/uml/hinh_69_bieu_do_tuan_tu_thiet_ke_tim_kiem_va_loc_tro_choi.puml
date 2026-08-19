@@ -1,0 +1,34 @@
+@startuml
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam ParticipantPadding 18
+skinparam BoxPadding 8
+skinparam maxMessageSize 75
+hide footbox
+autonumber
+actor User
+boundary "GameFilter/Search UI\n(Client)" as UI
+control "Game Route Handler / Action" as Action
+control "GameQueryService" as Service
+entity "GameRepository" as Repo
+control "PromotionService" as Promo
+participant "Prisma" as Prisma
+database "PostgreSQL" as DB
+
+User -> UI: Nhập từ khóa / bộ lọc / sắp xếp
+UI -> Action: search(criteria)
+Action -> Service: searchVisibleGames(criteria)
+Service -> Service: validate & normalize criteria
+Service -> Repo: searchVisible(criteria)
+Repo -> Prisma: game.findMany(where/orderBy/...)
+Prisma -> DB: SELECT games + relations
+DB --> Prisma: Kết quả phân trang
+Prisma --> Repo: Games
+Repo --> Service: Games
+Service -> Promo: resolveDisplayPrices(gameIds)
+Promo --> Service: Giá đang áp dụng
+Service --> Action: SearchResultDTO
+Action --> UI: SearchResultDTO
+UI --> User: Hiển thị kết quả
+@enduml

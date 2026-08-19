@@ -1,0 +1,61 @@
+@startuml
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+title Biểu đồ lớp thiết kế module Giỏ hàng\nMức mô hình: Implementation
+class CartClient <<Client Component>> {
+  + addGame(gameId: String): void
+  + removeGame(gameId: String): void
+}
+class CartServerEntry <<Server Action>> {
+  + addGame(gameId: String): Promise<ActionResult>
+  + removeGame(gameId: String): Promise<ActionResult>
+  + getCart(): Promise<CartDto>
+}
+class CartService <<service>> {
+  + addGame(userId: String, gameId: String): Promise<CartDto>
+  + removeGame(userId: String, gameId: String): Promise<CartDto>
+  + getCart(userId: String): Promise<CartDto>
+}
+interface ICartRepository <<interface>> {
+  + findByUserId(userId: String): Promise<Cart?>
+  + hasGame(userId: String, gameId: String): Promise<Boolean>
+  + addGame(userId: String, gameId: String): Promise<CartItem>
+  + removeGame(userId: String, gameId: String): Promise<void>
+}
+class PrismaCartRepository <<repository>> {
+  - prisma: PrismaClient
+}
+class GameService <<module API>> {
+  + getPurchasableGame(gameId: String): Promise<GameDto>
+}
+class LibraryService <<module API>> {
+  + hasGame(userId: String, gameId: String): Promise<Boolean>
+}
+class PrismaClient <<infrastructure>>
+class Cart <<Prisma Model>> {
+  + id: String
+  + userId: String
+  + createdAt: DateTime
+  + updatedAt: DateTime
+}
+class CartItem <<Prisma Model>> {
+  + id: String
+  + cartId: String
+  + gameId: String
+  + addedAt: DateTime
+}
+
+CartClient ..> CartServerEntry : gọi
+CartServerEntry ..> CartService : điều phối
+CartService ..> ICartRepository : sử dụng
+CartService ..> GameService : kiểm tra trò chơi
+CartService ..> LibraryService : kiểm tra sở hữu
+PrismaCartRepository ..|> ICartRepository : implements
+PrismaCartRepository ..> PrismaClient : truy cập
+PrismaCartRepository ..> Cart : ánh xạ
+PrismaCartRepository ..> CartItem : ánh xạ
+Cart "1" *-- "0..*" CartItem : chứa
+@enduml

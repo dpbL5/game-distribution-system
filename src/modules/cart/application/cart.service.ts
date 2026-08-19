@@ -27,6 +27,10 @@ export class CartService {
         discountPercent: price.discountPercent,
         priceWhenAdded: item.priceWhenAdded,
         addedAt: item.addedAt,
+        // A cart line is only purchasable while the game stays PUBLISHED.
+        // Games that became HIDDEN or ARCHIVED after being added are surfaced
+        // here so checkout can refuse them instead of creating an order.
+        available: item.game.status === "PUBLISHED",
       };
     });
     const subtotal = lines

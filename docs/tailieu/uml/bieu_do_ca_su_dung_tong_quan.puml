@@ -1,0 +1,70 @@
+@startuml
+!theme plain
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #F8FAFC
+  BorderColor #315A8A
+  ArrowColor #667085
+}
+ 
+actor "Người cao tuổi\n(Bệnh nhân)" as Patient
+actor "Người chăm sóc\n/ Người thân" as Caregiver
+actor "Bác sĩ" as Doctor
+actor "Quản trị viên" as Admin
+actor "Nhà thuốc" as Pharmacy
+actor "Dịch vụ AI / RAG" as AI <<external>>
+actor "Dịch vụ Push\nNotification" as Push <<external>>
+ 
+rectangle "HỆ THỐNG ĐIỀU PHỐI CHĂM SÓC SỨC KHỎE NGƯỜI CAO TUỔI" {
+  usecase "Quản lý hồ sơ &\nCare Circle" as UC_Care
+  usecase "Theo dõi sức khỏe\ntại nhà" as UC_Home
+  usecase "Quản lý thuốc &\ntuân thủ điều trị" as UC_Med
+  usecase "Cảnh báo sức khỏe\n& SOS" as UC_Alert
+  usecase "Đặt lịch tư vấn / khám" as UC_Appointment
+  usecase "Timeline & báo cáo\ntrước khám" as UC_PreVisit
+  usecase "Khám, kê đơn &\nkế hoạch sau khám" as UC_Clinical
+  usecase "Tóm tắt sức khỏe &\nhỏi đáp RAG" as UC_AI
+  usecase "Quản trị người dùng,\nvai trò & audit" as UC_Admin
+  usecase "Liên thông đơn thuốc\nnhà thuốc" as UC_Pharmacy
+}
+ 
+Patient --> UC_Care
+Patient --> UC_Home
+Patient --> UC_Med
+Patient --> UC_Alert
+Patient --> UC_Appointment
+Patient --> UC_AI
+ 
+Caregiver --> UC_Care
+Caregiver --> UC_Home
+Caregiver --> UC_Med
+Caregiver --> UC_Alert
+Caregiver --> UC_Appointment
+Caregiver --> UC_PreVisit
+ 
+Doctor --> UC_Alert
+Doctor --> UC_PreVisit
+Doctor --> UC_Clinical
+Doctor --> UC_AI
+ 
+Admin --> UC_Admin
+Pharmacy --> UC_Pharmacy
+AI --> UC_AI
+Push --> UC_Med
+Push --> UC_Alert
+ 
+UC_Home .> UC_Alert : <<extend>>\nKhi phát hiện bất thường
+UC_Med .> UC_Alert : <<extend>>\nKhi bỏ liều / cần escalation
+UC_Appointment .> UC_PreVisit : <<include>>
+UC_PreVisit .> UC_AI : <<include>>
+UC_Clinical .> UC_Med : <<include>>\nSinh lịch dùng thuốc
+UC_Clinical .> UC_Pharmacy : <<extend>>\nKhi chọn nhận thuốc
+ 
+note bottom of UC_Alert
+  Rule Engine/thuật toán tạo sự kiện an toàn.
+  AI dùng để tóm tắt và giải thích, không thay thế quyết định y khoa.
+end note
+@enduml

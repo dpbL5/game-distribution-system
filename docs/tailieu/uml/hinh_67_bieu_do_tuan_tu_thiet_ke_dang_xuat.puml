@@ -1,0 +1,25 @@
+@startuml
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam ParticipantPadding 18
+skinparam BoxPadding 8
+skinparam maxMessageSize 75
+hide footbox
+autonumber
+actor User
+boundary "Header/Profile UI\n(Client)" as UI
+control "logoutAction\n(Server Action)" as Action
+control "AuthService" as Auth
+control "SessionService" as Session
+
+User -> UI: Chọn đăng xuất
+UI -> Action: logout()
+Action -> Auth: logoutCurrentUser()
+Auth -> Session: destroyCurrentSession()
+Session -> Session: Xóa session/cookie xác thực
+Session --> Auth: done
+Auth --> Action: success
+Action --> UI: success
+UI --> User: Chuyển về trang công khai
+@enduml

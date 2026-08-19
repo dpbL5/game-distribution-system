@@ -1,0 +1,44 @@
+@startuml
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam ParticipantPadding 18
+skinparam BoxPadding 8
+skinparam maxMessageSize 75
+hide footbox
+autonumber
+actor Customer
+boundary "GameDetail/Wishlist UI\n(Client)" as UI
+control "addToWishlistAction" as Action
+control "WishlistService" as Service
+control "GameService" as GameService
+entity "WishlistRepository" as Repo
+participant "Prisma" as Prisma
+database "PostgreSQL" as DB
+
+Customer -> UI: Chọn thêm vào Wishlist
+UI -> Action: add(gameId)
+Action -> Action: requireAuthenticatedUser()
+Action -> Service: addGame(userId, gameId)
+Service -> GameService: ensureGameExists(gameId)
+GameService --> Service: Game | lỗi
+Service -> Repo: hasGame(userId, gameId)
+Repo -> Prisma: wishlistItem.findFirst(...)
+Prisma -> DB: SELECT wishlist_item
+DB --> Prisma: Item | null
+Prisma --> Repo: Item | null
+Repo --> Service: exists?
+alt Đã có trong Wishlist
+  Service --> Action: ALREADY_IN_WISHLIST
+else Chưa có
+  Service -> Repo: addGame(userId, gameId)
+  Repo -> Prisma: wishlistItem.create(...)
+  Prisma -> DB: INSERT wishlist_item
+  DB --> Prisma: Item
+  Prisma --> Repo: Item
+  Repo --> Service: Item
+  Service --> Action: success
+end
+Action --> UI: result
+UI --> Customer: Cập nhật trạng thái Wishlist
+@enduml

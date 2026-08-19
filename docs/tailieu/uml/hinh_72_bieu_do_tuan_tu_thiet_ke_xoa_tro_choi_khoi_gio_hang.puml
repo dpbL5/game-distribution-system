@@ -1,0 +1,41 @@
+@startuml
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam ParticipantPadding 18
+skinparam BoxPadding 8
+skinparam maxMessageSize 75
+hide footbox
+autonumber
+actor Customer
+boundary "CartPage\n(Client)" as UI
+control "removeFromCartAction" as Action
+control "CartService" as Service
+entity "CartRepository" as Repo
+participant "Prisma" as Prisma
+database "PostgreSQL" as DB
+
+Customer -> UI: Chọn xóa Game khỏi Cart
+UI -> Action: remove(cartItemId)
+Action -> Action: requireAuthenticatedUser()
+Action -> Service: removeItem(userId, cartItemId)
+Service -> Repo: findOwnedItem(userId, cartItemId)
+Repo -> Prisma: cartItem.findFirst(...)
+Prisma -> DB: SELECT cart_item
+DB --> Prisma: CartItem | null
+Prisma --> Repo: CartItem | null
+Repo --> Service: CartItem | null
+alt Không tồn tại / không thuộc Customer
+  Service --> Action: NOT_FOUND
+else Hợp lệ
+  Service -> Repo: delete(cartItemId)
+  Repo -> Prisma: cartItem.delete(...)
+  Prisma -> DB: DELETE cart_item
+  DB --> Prisma: done
+  Prisma --> Repo: done
+  Repo --> Service: done
+  Service --> Action: success
+end
+Action --> UI: result
+UI --> Customer: Hiển thị Cart đã cập nhật
+@enduml

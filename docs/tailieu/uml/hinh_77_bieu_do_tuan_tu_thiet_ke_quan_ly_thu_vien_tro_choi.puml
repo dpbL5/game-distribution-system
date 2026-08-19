@@ -1,0 +1,32 @@
+@startuml
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam ParticipantPadding 18
+skinparam BoxPadding 8
+skinparam maxMessageSize 75
+hide footbox
+autonumber
+actor Customer
+boundary "LibraryPage" as UI
+control "LibraryService" as Service
+entity "LibraryRepository" as Repo
+participant "Prisma" as Prisma
+database "PostgreSQL" as DB
+
+Customer -> UI: Mở thư viện / nhập từ khóa
+UI -> Service: getUserLibrary(userId, query)
+Service -> Repo: findByUser(userId, query)
+Repo -> Prisma: libraryItem.findMany(include game)
+Prisma -> DB: SELECT library_items + games
+DB --> Prisma: LibraryItems
+Prisma --> Repo: LibraryItems
+Repo --> Service: LibraryItems
+Service -> Service: mapToLibraryDTO()
+Service --> UI: LibraryGameDTO[]
+UI --> Customer: Hiển thị các Game đã sở hữu
+opt Mở chi tiết Game
+  Customer -> UI: Chọn Game
+  UI --> Customer: Điều hướng tới trang chi tiết Game
+end
+@enduml

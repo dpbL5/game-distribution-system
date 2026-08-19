@@ -1,0 +1,51 @@
+@startuml
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam ParticipantPadding 18
+skinparam BoxPadding 8
+skinparam maxMessageSize 75
+hide footbox
+autonumber
+actor Customer
+boundary "AddToCartButton\n(Client)" as UI
+control "addToCartAction" as Action
+control "CartService" as CartService
+control "GameService" as GameService
+control "LibraryService" as LibraryService
+entity "CartRepository" as CartRepo
+participant "Prisma" as Prisma
+database "PostgreSQL" as DB
+
+Customer -> UI: Chọn Thêm vào giỏ hàng
+UI -> Action: add(gameId)
+Action -> Action: requireAuthenticatedUser()
+Action -> CartService: addGame(userId, gameId)
+CartService -> GameService: getPurchasableGame(gameId)
+GameService --> CartService: Game | lỗi
+CartService -> LibraryService: hasGame(userId, gameId)
+LibraryService --> CartService: owned?
+alt Game đã sở hữu
+  CartService --> Action: GAME_ALREADY_OWNED
+else Chưa sở hữu
+  CartService -> CartRepo: hasGame(userId, gameId)
+  CartRepo -> Prisma: cartItem.findFirst(...)
+  Prisma -> DB: SELECT cart_item
+  DB --> Prisma: CartItem | null
+  Prisma --> CartRepo: CartItem | null
+  CartRepo --> CartService: exists?
+  alt Đã có trong Cart
+    CartService --> Action: GAME_ALREADY_IN_CART
+  else Chưa có
+    CartService -> CartRepo: addGame(userId, gameId)
+    CartRepo -> Prisma: cartItem.create(...)
+    Prisma -> DB: INSERT cart_item
+    DB --> Prisma: CartItem
+    Prisma --> CartRepo: CartItem
+    CartRepo --> CartService: CartItem
+    CartService --> Action: success
+  end
+end
+Action --> UI: result
+UI --> Customer: Cập nhật giao diện / thông báo
+@enduml

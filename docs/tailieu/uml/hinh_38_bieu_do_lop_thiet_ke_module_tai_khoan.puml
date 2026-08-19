@@ -1,0 +1,40 @@
+@startuml
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+title Biểu đồ lớp thiết kế module Tài khoản\nMức mô hình: Implementation
+class AuthClient <<Client Component>> {
+  + submitLogin(input: LoginInput): Promise<void>
+  + submitRegister(input: RegisterInput): Promise<void>
+}
+class AuthServerEntry <<Server Action>> {
+  + login(input: LoginInput): Promise<ActionResult>
+  + register(input: RegisterInput): Promise<ActionResult>
+}
+class AuthService <<service>> {
+  + login(input: LoginInput): Promise<AuthSession>
+  + register(input: RegisterInput): Promise<UserDto>
+}
+interface IUserRepository <<interface>> {
+  + findByLogin(login: String): Promise<User?>
+  + findByEmail(email: String): Promise<User?>
+  + create(data: CreateUserData): Promise<User>
+}
+class PrismaUserRepository <<repository>> {
+  - prisma: PrismaClient
+  + findByLogin(login: String): Promise<User?>
+  + findByEmail(email: String): Promise<User?>
+  + create(data: CreateUserData): Promise<User>
+}
+class PrismaClient <<infrastructure>>
+class User <<Prisma Model>> { + id: String\n+ email: String\n+ role: UserRole\n+ status: UserStatus }
+
+AuthClient ..> AuthServerEntry : gọi
+AuthServerEntry ..> AuthService : điều phối
+AuthService ..> IUserRepository : sử dụng
+PrismaUserRepository ..|> IUserRepository : implements
+PrismaUserRepository ..> PrismaClient : truy cập
+PrismaUserRepository ..> User : ánh xạ
+@enduml

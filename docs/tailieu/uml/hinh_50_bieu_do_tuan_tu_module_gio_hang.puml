@@ -1,0 +1,27 @@
+@startuml
+actor Customer
+participant CartClient
+participant CartServerEntry
+participant CartService
+participant GameService
+participant LibraryService
+participant CartRepository
+participant Prisma
+database PostgreSQL
+Customer -> CartClient : thêm Game vào giỏ
+CartClient -> CartServerEntry : addToCart(gameId)
+CartServerEntry -> CartService : addGame(userId, gameId)
+CartService -> GameService : kiểm tra Game
+GameService --> CartService : hợp lệ
+CartService -> LibraryService : hasOwnership()
+LibraryService --> CartService : false
+CartService -> CartRepository : exists(cartId, gameId)
+CartRepository --> CartService : false
+CartService -> CartRepository : createCartItem()
+CartRepository -> Prisma : create
+Prisma -> PostgreSQL : INSERT
+PostgreSQL --> Prisma : OK
+Prisma --> CartRepository : CartItem
+CartRepository --> CartService : CartItem
+CartService --> CartClient : cập nhật giỏ
+@enduml

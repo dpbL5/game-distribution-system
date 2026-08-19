@@ -29,7 +29,11 @@ export function GameCover({ name, coverPath, className, role = "img", label }: G
     );
   }
   return (
-    <div className={`game-cover ${artClass(name)} ${className ?? ""}`.trim()} role={role} aria-label={label ?? `Ảnh bìa ${name}`}>
+    <div
+      className={`game-cover ${artClass(name)} ${className ?? ""}`.trim()}
+      role={role}
+      aria-label={label ?? `Ảnh bìa ${name}`}
+    >
       {name}
     </div>
   );

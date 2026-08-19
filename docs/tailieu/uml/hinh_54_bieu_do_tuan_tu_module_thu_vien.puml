@@ -1,0 +1,19 @@
+@startuml
+actor Customer
+participant LibraryClient
+participant LibraryServerEntry
+participant LibraryService
+participant LibraryRepository
+participant Prisma
+database PostgreSQL
+Customer -> LibraryClient : mở thư viện
+LibraryClient -> LibraryServerEntry : getLibrary()
+LibraryServerEntry -> LibraryService : getOwnedGames(userId)
+LibraryService -> LibraryRepository : findByUser()
+LibraryRepository -> Prisma : query
+Prisma -> PostgreSQL : SELECT
+PostgreSQL --> Prisma : LibraryItems
+Prisma --> LibraryRepository : LibraryItems
+LibraryRepository --> LibraryService : dữ liệu
+LibraryService --> LibraryClient : danh sách trò chơi
+@enduml

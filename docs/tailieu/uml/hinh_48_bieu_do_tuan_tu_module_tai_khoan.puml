@@ -1,0 +1,20 @@
+@startuml
+actor User
+participant AuthClient
+participant AuthServerEntry
+participant AuthService
+participant UserRepository
+participant Prisma
+database PostgreSQL
+User -> AuthClient : gửi thông tin đăng nhập
+AuthClient -> AuthServerEntry : submit
+AuthServerEntry -> AuthService : authenticate()
+AuthService -> UserRepository : findByLogin()
+UserRepository -> Prisma : query
+Prisma -> PostgreSQL : SELECT
+PostgreSQL --> Prisma : user
+Prisma --> UserRepository : user
+UserRepository --> AuthService : user
+AuthService --> AuthServerEntry : kết quả
+AuthServerEntry --> AuthClient : phản hồi
+@enduml

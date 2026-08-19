@@ -1,0 +1,38 @@
+@startuml
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam ParticipantPadding 18
+skinparam BoxPadding 8
+skinparam maxMessageSize 75
+hide footbox
+autonumber
+actor User
+boundary "GameDetailPage" as UI
+control "GameQueryService" as GameService
+entity "GameRepository" as GameRepo
+control "PromotionService" as Promo
+control "ReviewService" as Review
+participant "Prisma" as Prisma
+database "PostgreSQL" as DB
+
+User -> UI: Mở /games/{slug}
+UI -> GameService: getPublicGameDetail(slug)
+GameService -> GameRepo: findVisibleBySlug(slug)
+GameRepo -> Prisma: game.findUnique(...relations/media)
+Prisma -> DB: SELECT game + relations
+DB --> Prisma: Game | null
+Prisma --> GameRepo: Game | null
+GameRepo --> GameService: Game | null
+alt Game không tồn tại hoặc bị ẩn
+  GameService --> UI: NOT_FOUND
+  UI --> User: Trang không tìm thấy
+else Game hợp lệ
+  GameService -> Promo: getCurrentPrice(gameId)
+  Promo --> GameService: displayPrice
+  GameService -> Review: getPublicReviews(gameId)
+  Review --> GameService: ReviewSummary
+  GameService --> UI: GameDetailDTO
+  UI --> User: Hiển thị chi tiết trò chơi
+end
+@enduml

@@ -1,0 +1,11 @@
+@startuml
+actor Guest
+participant "Hệ thống" as System
+Guest -> System : gửi thông tin đăng nhập
+System -> System : kiểm tra tài khoản và trạng thái
+alt hợp lệ
+  System --> Guest : đăng nhập thành công
+else không hợp lệ hoặc bị khóa
+  System --> Guest : thông báo lỗi
+end
+@enduml

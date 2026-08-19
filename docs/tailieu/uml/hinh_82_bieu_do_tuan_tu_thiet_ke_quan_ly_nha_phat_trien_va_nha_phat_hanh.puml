@@ -1,0 +1,43 @@
+@startuml
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam ParticipantPadding 18
+skinparam BoxPadding 8
+skinparam maxMessageSize 75
+hide footbox
+autonumber
+actor Administrator
+boundary "AdminDeveloperPublisherForm\n(Client)" as UI
+control "saveCompanyAction" as Action
+control "AuthorizationService" as Authz
+control "DeveloperPublisherService" as Service
+entity "Developer/Publisher Repository" as Repo
+participant "Prisma" as Prisma
+database "PostgreSQL" as DB
+
+Administrator -> UI: Thêm/sửa Developer hoặc Publisher
+UI -> Action: save(type, input)
+Action -> Authz: requireAdministrator()
+Authz --> Action: authorized
+Action -> Service: save(type, input)
+Service -> Service: validate(name, website, ...)
+alt type = Developer
+  Service -> Repo: saveDeveloper(input)
+  Repo -> Prisma: developer.create/update(...)
+  Prisma -> DB: INSERT/UPDATE developer
+  DB --> Prisma: Developer
+  Prisma --> Repo: Developer
+  Repo --> Service: Developer
+else type = Publisher
+  Service -> Repo: savePublisher(input)
+  Repo -> Prisma: publisher.create/update(...)
+  Prisma -> DB: INSERT/UPDATE publisher
+  DB --> Prisma: Publisher
+  Prisma --> Repo: Publisher
+  Repo --> Service: Publisher
+end
+Service --> Action: result
+Action --> UI: result
+UI --> Administrator: Hiển thị thông tin đã lưu
+@enduml

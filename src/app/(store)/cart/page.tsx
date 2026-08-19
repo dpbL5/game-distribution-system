@@ -39,7 +39,12 @@ export default async function CartPage() {
         <section className="stack">
           {quote.items.map((item) => (
             <article className="panel cart-line" key={item.itemId}>
-              <GameCover name={item.name} className="cart-cover" role="img" label={`Ảnh bìa ${item.name}`} />
+              <GameCover
+                name={item.name}
+                className="cart-cover"
+                role="img"
+                label={`Ảnh bìa ${item.name}`}
+              />
               <div className="game-info">
                 <div className="price-row">
                   <div>
@@ -53,6 +58,11 @@ export default async function CartPage() {
                 {item.discountPercent !== "0.00" ? (
                   <p className="muted small">
                     Khuyến mãi {item.discountPercent}% · giá gốc {formatMoney(item.basePrice)}
+                  </p>
+                ) : null}
+                {!item.available ? (
+                  <p className="muted small">
+                    Game này hiện không còn bán và sẽ bị loại khỏi đơn hàng khi thanh toán.
                   </p>
                 ) : null}
                 <form action={removeFromCartAction}>

@@ -1,0 +1,35 @@
+@startuml
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+title Biểu đồ lớp phân tích module Đơn hàng\nMức mô hình: Specification
+class CheckoutPage <<boundary>> {
+  + confirmCheckout()
+}
+class OrderHistoryPage <<boundary>> {
+  + viewOrders()
+  + selectOrder(orderId)
+}
+class OrderController <<control>> {
+  + checkout(userId): Order
+  + getOrders(userId): Order[*]
+  + getOrderDetail(userId, orderId): Order
+}
+class Order <<entity>> { totalAmount\nstatus }
+class OrderItem <<entity>> { gameName\noriginalPrice\ndiscountAmount\npaidPrice }
+class Game <<entity>> { name\noriginalPrice\nisVisible }
+class Cart <<entity>>
+class Promotion <<entity>> { discountValue\nstartAt\nendAt\nstatus }
+class LibraryItem <<entity>>
+
+CheckoutPage ..> OrderController : gọi
+OrderHistoryPage ..> OrderController : gọi
+OrderController ..> Order : tạo / truy vấn
+OrderController ..> Cart : đọc giỏ hàng
+OrderController ..> Promotion : tính giá hiện hành
+OrderController ..> LibraryItem : kiểm tra sở hữu
+Order "1" *-- "1..*" OrderItem : gồm
+OrderItem "0..*" -- "1" Game : mua
+@enduml

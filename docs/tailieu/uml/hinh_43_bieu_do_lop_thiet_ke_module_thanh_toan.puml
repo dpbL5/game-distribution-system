@@ -1,0 +1,61 @@
+@startuml
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+title Biểu đồ lớp thiết kế module Thanh toán\nMức mô hình: Implementation
+class PaymentClient <<Client Component>> {
+  + startPayment(orderId: String): void
+}
+class PaymentServerEntry <<Server Action / Route Handler>> {
+  + start(orderId: String): Promise<PaymentResponse>
+  + confirm(result: GatewayResult): Promise<ActionResult>
+}
+class PaymentService <<service>> {
+  + initiate(userId: String, orderId: String): Promise<PaymentRequest>
+  + confirm(result: GatewayResult): Promise<void>
+}
+interface IPaymentRepository <<interface>> {
+  + createPending(orderId: String, amount: Decimal): Promise<Payment>
+  + complete(paymentId: String, tx: TransactionClient): Promise<void>
+  + fail(paymentId: String): Promise<void>
+}
+class PrismaPaymentRepository <<repository>> { - prisma: PrismaClient }
+interface IPaymentGateway <<interface>> {
+  + pay(request: PaymentRequest): Promise<GatewayResult>
+  + verify(result: GatewayResult): Promise<Boolean>
+}
+class MockPaymentGatewayAdapter <<adapter>> {
+  + pay(request: PaymentRequest): Promise<GatewayResult>
+  + verify(result: GatewayResult): Promise<Boolean>
+}
+class OrderService <<module API>> { + markPaid(orderId: String, tx: TransactionClient): Promise<void> }
+class LibraryService <<module API>> { + grantOrderItems(orderId: String, tx: TransactionClient): Promise<void> }
+class PrismaClient <<infrastructure>>
+class Payment <<Prisma Model>> {
+  + id: String
+  + orderId: String
+  + method: String
+  + transactionCode: String?
+  + amount: Decimal
+  + status: PaymentStatus
+  + paidAt: DateTime?
+}
+
+PaymentClient ..> PaymentServerEntry : gọi
+PaymentServerEntry ..> PaymentService : điều phối
+PaymentService ..> IPaymentRepository : sử dụng
+PaymentService ..> IPaymentGateway : gọi gateway
+PaymentService ..> OrderService : cập nhật đơn hàng
+PaymentService ..> LibraryService : cấp quyền sở hữu
+PrismaPaymentRepository ..|> IPaymentRepository : implements
+MockPaymentGatewayAdapter ..|> IPaymentGateway : implements
+PrismaPaymentRepository ..> PrismaClient : truy cập
+
+PrismaPaymentRepository ..> Payment : ánh xạ
+
+note bottom of PaymentService
+  Gọi Payment Gateway ở ngoài transaction.\nSau khi kết quả được xác minh, dùng transaction cục bộ\nđể cập nhật Payment, Order và LibraryItem.
+end note
+@enduml

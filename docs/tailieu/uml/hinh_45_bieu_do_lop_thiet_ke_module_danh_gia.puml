@@ -1,0 +1,43 @@
+@startuml
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+title Biểu đồ lớp thiết kế module Đánh giá\nMức mô hình: Implementation
+class ReviewClient <<Client Component>> {
+  + submitReview(input: ReviewInput): void
+}
+class ReviewServerEntry <<Server Action>> {
+  + create(input: ReviewInput): Promise<ActionResult>
+  + update(reviewId: String, input: ReviewInput): Promise<ActionResult>
+}
+class ReviewService <<service>> {
+  + create(userId: String, input: ReviewInput): Promise<ReviewDto>
+  + update(userId: String, reviewId: String, input: ReviewInput): Promise<ReviewDto>
+}
+interface IReviewRepository <<interface>> {
+  + findByUserAndGame(userId: String, gameId: String): Promise<Review?>
+  + create(data: ReviewData): Promise<Review>
+  + update(id: String, data: ReviewData): Promise<Review>
+}
+class PrismaReviewRepository <<repository>> { - prisma: PrismaClient }
+class LibraryService <<module API>> { + hasGame(userId: String, gameId: String): Promise<Boolean> }
+class PrismaClient <<infrastructure>>
+class Review <<Prisma Model>> {
+  + id: String
+  + userId: String
+  + gameId: String
+  + content: String
+  + recommended: Boolean
+  + isVisible: Boolean
+}
+
+ReviewClient ..> ReviewServerEntry : gọi
+ReviewServerEntry ..> ReviewService : điều phối
+ReviewService ..> IReviewRepository : sử dụng
+ReviewService ..> LibraryService : kiểm tra sở hữu
+PrismaReviewRepository ..|> IReviewRepository : implements
+PrismaReviewRepository ..> PrismaClient : truy cập
+PrismaReviewRepository ..> Review : ánh xạ
+@enduml

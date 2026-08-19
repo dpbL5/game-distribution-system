@@ -1,0 +1,18 @@
+@startuml
+start
+:Đăng nhập quản trị;
+:Dashboard;
+if (Chọn chức năng) then (Trò chơi)
+  :Quản lý Game / Category / Media;
+elseif (Khuyến mãi)
+  :Quản lý Promotion;
+elseif (Đơn hàng)
+  :Theo dõi Order / Payment;
+elseif (Người dùng)
+  :Quản lý User;
+else (Đánh giá)
+  :Kiểm duyệt Review;
+endif
+:Quay lại Dashboard;
+stop
+@enduml

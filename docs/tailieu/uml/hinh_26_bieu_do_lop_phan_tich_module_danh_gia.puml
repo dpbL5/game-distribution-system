@@ -1,0 +1,29 @@
+@startuml
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+title Biểu đồ lớp phân tích module Đánh giá\nMức mô hình: Specification
+class ReviewForm <<boundary>> {
+  + submitReview(gameId, content, recommended)
+  + editReview(reviewId, content)
+}
+class ReviewController <<control>> {
+  + createReview(userId, gameId, data): Review
+  + updateReview(userId, reviewId, data): Review
+  + deleteReview(userId, reviewId): void
+}
+class User <<entity>>
+class Game <<entity>>
+class Review <<entity>> { content\nrecommended\nisVisible }
+class LibraryItem <<entity>> { status }
+
+ReviewForm ..> ReviewController : gọi
+ReviewController ..> Review : quản lý
+ReviewController ..> LibraryItem : kiểm tra sở hữu
+User "1" -- "0..*" Review : viết
+Review "0..*" -- "1" Game : đánh giá
+User "1" -- "0..*" LibraryItem : sở hữu
+LibraryItem "0..*" -- "1" Game : cấp quyền với
+@enduml

@@ -1,0 +1,53 @@
+@startuml
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam ParticipantPadding 18
+skinparam BoxPadding 8
+skinparam maxMessageSize 75
+hide footbox
+autonumber
+actor Customer
+boundary "ProfileForm\n(Client)" as UI
+control "updateProfileAction" as Action
+control "UserService" as Service
+entity "UserRepository" as Repo
+control "MediaStorageService" as Storage
+participant "LocalMediaStorage" as LocalStorage
+participant "Prisma" as Prisma
+database "PostgreSQL" as DB
+collections "Filesystem" as FS
+
+Customer -> UI: Cập nhật hồ sơ
+UI -> Action: updateProfile(input, avatar?)
+Action -> Action: requireAuthenticatedUser()
+Action -> Service: updateProfile(userId, input, avatar?)
+Service -> Service: validateProfileInput()
+opt Có avatar mới
+  Service -> Storage: saveAvatar(file)
+  Storage -> LocalStorage: save(file, users/avatars)
+  LocalStorage -> FS: write file
+  FS --> LocalStorage: path
+  LocalStorage --> Storage: path
+  Storage --> Service: avatarPath
+end
+Service -> Repo: update(userId, profileData)
+Repo -> Prisma: user.update(...)
+Prisma -> DB: UPDATE user
+alt Cập nhật DB thất bại và đã lưu avatar mới
+  DB --> Prisma: error
+  Prisma --> Repo: error
+  Repo --> Service: error
+  Service -> Storage: delete(newAvatarPath)
+  Storage -> LocalStorage: delete(path)
+  LocalStorage -> FS: unlink file
+  Service --> Action: UPDATE_FAILED
+else Thành công
+  DB --> Prisma: User
+  Prisma --> Repo: User
+  Repo --> Service: User
+  Service --> Action: ProfileDTO
+end
+Action --> UI: result
+UI --> Customer: Hiển thị hồ sơ đã cập nhật
+@enduml

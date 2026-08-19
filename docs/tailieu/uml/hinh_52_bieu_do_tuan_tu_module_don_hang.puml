@@ -1,0 +1,28 @@
+@startuml
+actor Customer
+participant CheckoutClient
+participant OrderServerEntry
+participant OrderService
+participant CartService
+participant PromotionService
+participant LibraryService
+participant OrderRepository
+participant Prisma
+database PostgreSQL
+Customer -> CheckoutClient : xác nhận checkout
+CheckoutClient -> OrderServerEntry : checkout()
+OrderServerEntry -> OrderService : createOrder(userId)
+OrderService -> CartService : getCheckoutItems()
+CartService --> OrderService : cart items
+OrderService -> LibraryService : kiểm tra sở hữu
+LibraryService --> OrderService : kết quả
+OrderService -> PromotionService : tính giá hiện hành
+PromotionService --> OrderService : giá áp dụng
+OrderService -> OrderRepository : createOrderAndItems()
+OrderRepository -> Prisma : transaction
+Prisma -> PostgreSQL : INSERT Order + OrderItem
+PostgreSQL --> Prisma : commit
+Prisma --> OrderRepository : Order
+OrderRepository --> OrderService : Order
+OrderService --> CheckoutClient : Order chờ thanh toán
+@enduml

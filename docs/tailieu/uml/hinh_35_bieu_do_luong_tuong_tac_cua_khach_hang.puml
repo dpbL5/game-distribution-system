@@ -1,0 +1,24 @@
+@startuml
+start
+:Trang chủ / Cửa hàng;
+:Tìm kiếm hoặc lọc trò chơi;
+:Xem chi tiết trò chơi;
+if (Đã đăng nhập?) then (Có)
+  if (Đã sở hữu?) then (Có)
+    :Mở thư viện / viết đánh giá;
+  else (Không)
+    :Thêm vào giỏ hàng;
+    :Mở giỏ hàng;
+    :Checkout;
+    :Thanh toán;
+    if (Thành công?) then (Có)
+      :Mở thư viện;
+    else (Không)
+      :Hiển thị lỗi thanh toán;
+    endif
+  endif
+else (Không)
+  :Đăng nhập / đăng ký;
+endif
+stop
+@enduml

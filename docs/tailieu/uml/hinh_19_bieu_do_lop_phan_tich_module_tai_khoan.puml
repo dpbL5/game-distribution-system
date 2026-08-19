@@ -1,0 +1,38 @@
+@startuml
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+title Biểu đồ lớp phân tích module Tài khoản\nMức mô hình: Specification
+class AuthPage <<boundary>> {
+  + submitLogin(credentials)
+  + submitRegister(data)
+}
+class ProfilePage <<boundary>> {
+  + submitProfile(data)
+  + submitPasswordChange(data)
+}
+class AuthController <<control>> {
+  + login(credentials): AuthResult
+  + register(data): User
+  + logout(): void
+}
+class UserController <<control>> {
+  + getProfile(userId): User
+  + updateProfile(userId, data): User
+  + changePassword(userId, data): void
+}
+class User <<entity>> {
+  username
+  email
+  role
+  status
+  + canLogin(): Boolean
+}
+
+AuthPage ..> AuthController : gọi
+ProfilePage ..> UserController : gọi
+AuthController ..> User : xác thực / tạo
+UserController ..> User : đọc / cập nhật
+@enduml

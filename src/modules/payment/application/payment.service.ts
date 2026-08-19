@@ -52,6 +52,8 @@ export class PaymentService {
     const callback = this.gateway.verifyCallback(payload, signature);
     const order = await this.repository.findOrder(callback.orderId);
     if (!order) throw new AppError("ORDER_NOT_FOUND", "Không tìm thấy đơn hàng.", 404);
+    // Compare money as Decimal values instead of raw strings: a gateway may
+    // send "100" while the order stores "100.00" and both are the same amount.
     if (!new Decimal(callback.amount).equals(new Decimal(order.grandTotal))) {
       throw new AppError(
         "PAYMENT_AMOUNT_MISMATCH",
@@ -70,7 +72,7 @@ export class PaymentService {
     if (!order) throw new AppError("ORDER_NOT_FOUND", "Không tìm thấy đơn hàng.", 404);
     const payment = await this.repository.findByOrderId(order.id);
     if (!payment || !payment.providerTransactionId)
-      throw new AppError("PAYMENT_AMOUNT_MISMATCH", "Thanh toán chưa được bắt đầu.", 409);
+      throw new AppError("PAYMENT_NOT_STARTED", "Thanh toán chưa được bắt đầu.", 409);
 
     const payload = JSON.stringify({
       orderId: order.id,

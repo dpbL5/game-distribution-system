@@ -1,0 +1,41 @@
+@startuml
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+title Biểu đồ lớp thiết kế module Thư viện\nMức mô hình: Implementation
+class LibraryClient <<Client Component>> {
+  + loadLibrary(): void
+}
+class LibraryServerEntry <<Server Action>> {
+  + getLibrary(): Promise<LibraryItemDto[*]>
+}
+class LibraryService <<service>> {
+  + getLibrary(userId: String): Promise<LibraryItemDto[*]>
+  + hasGame(userId: String, gameId: String): Promise<Boolean>
+  + grantOrderItems(orderId: String, tx: TransactionClient): Promise<void>
+}
+interface ILibraryRepository <<interface>> {
+  + findByUserId(userId: String): Promise<LibraryItem[*]>
+  + exists(userId: String, gameId: String): Promise<Boolean>
+  + createMany(items: LibraryGrant[*], tx: TransactionClient): Promise<void>
+}
+class PrismaLibraryRepository <<repository>> { - prisma: PrismaClient }
+class PrismaClient <<infrastructure>>
+class LibraryItem <<Prisma Model>> {
+  + id: String
+  + userId: String
+  + gameId: String
+  + orderItemId: String
+  + purchasedAt: DateTime
+  + status: LibraryItemStatus
+}
+
+LibraryClient ..> LibraryServerEntry : gọi
+LibraryServerEntry ..> LibraryService : điều phối
+LibraryService ..> ILibraryRepository : sử dụng
+PrismaLibraryRepository ..|> ILibraryRepository : implements
+PrismaLibraryRepository ..> PrismaClient : truy cập
+PrismaLibraryRepository ..> LibraryItem : ánh xạ
+@enduml

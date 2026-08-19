@@ -9,6 +9,11 @@ export async function requireUser() {
   return user;
 }
 
+/**
+ * Returns the authenticated user when present, or `null` for guests. Used on
+ * storefront pages that are open to both guests and customers (e.g. game
+ * detail) so ownership state can be shown without forcing a login.
+ */
 export async function currentUser() {
   return authService.currentUser();
 }

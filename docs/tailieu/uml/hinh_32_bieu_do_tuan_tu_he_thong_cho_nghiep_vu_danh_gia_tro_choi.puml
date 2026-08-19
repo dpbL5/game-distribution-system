@@ -1,0 +1,11 @@
+@startuml
+actor Customer
+participant "Hệ thống" as System
+Customer -> System : tạo đánh giá(gameId, nội dung)
+System -> System : kiểm tra sở hữu và đánh giá trùng
+alt hợp lệ
+  System --> Customer : lưu đánh giá thành công
+else không hợp lệ
+  System --> Customer : từ chối tạo đánh giá
+end
+@enduml

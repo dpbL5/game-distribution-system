@@ -1,0 +1,46 @@
+@startuml
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam ParticipantPadding 18
+skinparam BoxPadding 8
+skinparam maxMessageSize 75
+hide footbox
+autonumber
+actor Guest
+boundary "LoginForm\n(Client)" as UI
+control "loginAction\n(Server Action)" as Action
+control "AuthService" as Auth
+entity "UserRepository" as Repo
+control "PasswordService" as Password
+control "SessionService" as Session
+participant "Prisma" as Prisma
+database "PostgreSQL" as DB
+
+Guest -> UI: Nhập email/username và mật khẩu
+UI -> Action: submit(credentials)
+Action -> Auth: login(credentials)
+Auth -> Repo: findByLogin(login)
+Repo -> Prisma: user.findFirst(...)
+Prisma -> DB: SELECT user
+DB --> Prisma: User | null
+Prisma --> Repo: User | null
+Repo --> Auth: User | null
+alt Không tìm thấy tài khoản
+  Auth --> Action: INVALID_CREDENTIALS
+else Tài khoản bị khóa
+  Auth --> Action: ACCOUNT_LOCKED
+else Tài khoản hợp lệ
+  Auth -> Password: verify(password, passwordHash)
+  Password --> Auth: valid?
+  alt Mật khẩu sai
+    Auth --> Action: INVALID_CREDENTIALS
+  else Mật khẩu đúng
+    Auth -> Session: createSession(userId, role)
+    Session --> Auth: session
+    Auth --> Action: login success
+  end
+end
+Action --> UI: result
+UI --> Guest: Hiển thị kết quả / chuyển trang
+@enduml

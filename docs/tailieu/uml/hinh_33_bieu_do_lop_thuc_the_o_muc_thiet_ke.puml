@@ -1,0 +1,184 @@
+@startuml
+top to bottom direction
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+title Biểu đồ lớp thực thể ở mức thiết kế\nMức mô hình: Implementation
+class User <<Prisma Model>> {
+  + id: String
+  + username: String
+  + email: String
+  + passwordHash: String
+  + displayName: String?
+  + role: UserRole
+  + status: UserStatus
+  + createdAt: DateTime
+  + updatedAt: DateTime
+}
+class Game <<Prisma Model>> {
+  + id: String
+  + slug: String
+  + name: String
+  + originalPrice: Decimal
+  + releaseDate: DateTime
+  + isVisible: Boolean
+  + developerId: String
+  + publisherId: String
+}
+class Developer <<Prisma Model>> {
+  + id: String
+  + name: String
+  + website: String?
+  + logoPath: String?
+}
+class Publisher <<Prisma Model>> {
+  + id: String
+  + name: String
+  + website: String?
+  + logoPath: String?
+}
+class Category <<Prisma Model>> {
+  + id: String
+  + name: String
+  + description: String?
+  + isActive: Boolean
+}
+class GameCategory <<Prisma Model>> {
+  + gameId: String
+  + categoryId: String
+}
+class GameMedia <<Prisma Model>> {
+  + id: String
+  + gameId: String
+  + type: MediaType
+  + path: String
+  + fileName: String
+  + mimeType: String
+  + sortOrder: Int
+}
+class Cart <<Prisma Model>> {
+  + id: String
+  + userId: String
+  + createdAt: DateTime
+  + updatedAt: DateTime
+}
+class CartItem <<Prisma Model>> {
+  + id: String
+  + cartId: String
+  + gameId: String
+  + addedAt: DateTime
+}
+class Wishlist <<Prisma Model>> {
+  + id: String
+  + userId: String
+  + createdAt: DateTime
+}
+class WishlistItem <<Prisma Model>> {
+  + id: String
+  + wishlistId: String
+  + gameId: String
+  + addedAt: DateTime
+}
+class Order <<Prisma Model>> {
+  + id: String
+  + userId: String
+  + totalAmount: Decimal
+  + status: OrderStatus
+  + createdAt: DateTime
+  + paidAt: DateTime?
+}
+class OrderItem <<Prisma Model>> {
+  + id: String
+  + orderId: String
+  + gameId: String
+  + gameName: String
+  + originalPrice: Decimal
+  + discountAmount: Decimal
+  + paidPrice: Decimal
+}
+class Payment <<Prisma Model>> {
+  + id: String
+  + orderId: String
+  + method: String
+  + transactionCode: String?
+  + amount: Decimal
+  + status: PaymentStatus
+  + paidAt: DateTime?
+}
+class LibraryItem <<Prisma Model>> {
+  + id: String
+  + userId: String
+  + gameId: String
+  + orderItemId: String
+  + purchasedAt: DateTime
+  + status: LibraryItemStatus
+}
+class Review <<Prisma Model>> {
+  + id: String
+  + userId: String
+  + gameId: String
+  + content: String
+  + recommended: Boolean
+  + isVisible: Boolean
+  + createdAt: DateTime
+  + updatedAt: DateTime
+}
+class Promotion <<Prisma Model>> {
+  + id: String
+  + name: String
+  + discountValue: Decimal
+  + startAt: DateTime
+  + endAt: DateTime
+  + status: PromotionStatus
+  + createdById: String
+}
+class GamePromotion <<Prisma Model>> {
+  + gameId: String
+  + promotionId: String
+}
+
+User "1" -- "0..1" Cart : userId
+Cart "1" *-- "0..*" CartItem : cartId
+CartItem "0..*" -- "1" Game : gameId
+
+User "1" -- "1" Wishlist : userId
+Wishlist "1" *-- "0..*" WishlistItem : wishlistId
+WishlistItem "0..*" -- "1" Game : gameId
+
+User "1" -- "0..*" Order : userId
+Order "1" *-- "1..*" OrderItem : orderId
+OrderItem "0..*" -- "1" Game : gameId
+Order "1" *-- "0..1" Payment : orderId
+
+User "1" -- "0..*" LibraryItem : userId
+LibraryItem "0..*" -- "1" Game : gameId
+OrderItem "1" -- "0..1" LibraryItem : orderItemId
+
+User "1" -- "0..*" Review : userId
+Review "0..*" -- "1" Game : gameId
+
+Developer "1" -- "0..*" Game : developerId
+Publisher "1" -- "0..*" Game : publisherId
+Game "1" *-- "0..*" GameMedia : gameId
+
+Game "1" -- "0..*" GameCategory : gameId
+Category "1" -- "0..*" GameCategory : categoryId
+
+Game "1" -- "0..*" GamePromotion : gameId
+Promotion "1" -- "0..*" GamePromotion : promotionId
+User "1" -- "0..*" Promotion : createdById {Administrator}
+
+note bottom of CartItem
+  UNIQUE(cartId, gameId)
+end note
+note bottom of WishlistItem
+  UNIQUE(wishlistId, gameId)
+end note
+note bottom of LibraryItem
+  UNIQUE(userId, gameId)
+end note
+note bottom of Review
+  UNIQUE(userId, gameId)
+end note
+@enduml

@@ -1,0 +1,31 @@
+@startuml
+package "Next.js Application" {
+  package "Auth/User"
+  package "Game"
+  package "Cart"
+  package "Wishlist"
+  package "Order"
+  package "Payment"
+  package "Library"
+  package "Review"
+  package "Promotion"
+  package "Administration"
+  package "Infrastructure" {
+    component "Prisma ORM" as Prisma
+    database "PostgreSQL" as DB
+    component "Media Storage Service" as Media
+    component "Payment Adapter" as PayAdapter
+  }
+}
+Prisma --> DB
+"Game" ..> Media
+"Auth/User" ..> Media
+"Payment" ..> PayAdapter
+"Cart" ..> "Game"
+"Cart" ..> "Library"
+"Order" ..> "Cart"
+"Order" ..> "Promotion"
+"Payment" ..> "Order"
+"Payment" ..> "Library"
+"Review" ..> "Library"
+@enduml

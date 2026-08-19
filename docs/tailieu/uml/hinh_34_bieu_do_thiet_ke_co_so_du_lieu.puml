@@ -1,0 +1,121 @@
+@startuml
+entity users {
+  * id : PK
+  --
+  username : UNIQUE
+  email : UNIQUE
+  password_hash
+  role
+  status
+}
+entity games {
+  * id : PK
+  --
+  developer_id : FK
+  publisher_id : FK
+  slug : UNIQUE
+  original_price
+  is_visible
+}
+entity carts {
+  * id : PK
+  --
+  user_id : FK, UNIQUE
+}
+entity cart_items {
+  * id : PK
+  --
+  cart_id : FK
+  game_id : FK
+  UNIQUE(cart_id, game_id)
+}
+entity wishlists {
+  * id : PK
+  --
+  user_id : FK, UNIQUE
+}
+entity wishlist_items {
+  * id : PK
+  --
+  wishlist_id : FK
+  game_id : FK
+  UNIQUE(wishlist_id, game_id)
+}
+entity orders {
+  * id : PK
+  --
+  user_id : FK
+  total_amount
+  status
+}
+entity order_items {
+  * id : PK
+  --
+  order_id : FK
+  game_id : FK
+  game_name
+  paid_price
+}
+entity payments {
+  * id : PK
+  --
+  order_id : FK, UNIQUE
+  amount
+  status
+}
+entity library_items {
+  * id : PK
+  --
+  user_id : FK
+  game_id : FK
+  order_item_id : FK
+  UNIQUE(user_id, game_id)
+}
+entity reviews {
+  * id : PK
+  --
+  user_id : FK
+  game_id : FK
+  UNIQUE(user_id, game_id)
+}
+entity promotions {
+  * id : PK
+  --
+  created_by_id : FK
+  start_at
+  end_at
+}
+entity game_promotions {
+  * id : PK
+  --
+  game_id : FK
+  promotion_id : FK
+  UNIQUE(game_id, promotion_id)
+}
+entity game_media {
+  * id : PK
+  --
+  game_id : FK
+  path
+  mime_type
+}
+users ||--o| carts
+carts ||--o{ cart_items
+games ||--o{ cart_items
+users ||--|| wishlists
+wishlists ||--o{ wishlist_items
+games ||--o{ wishlist_items
+users ||--o{ orders
+orders ||--|{ order_items
+games ||--o{ order_items
+orders ||--o| payments
+users ||--o{ library_items
+games ||--o{ library_items
+order_items ||--o| library_items
+users ||--o{ reviews
+games ||--o{ reviews
+users ||--o{ promotions
+promotions ||--o{ game_promotions
+games ||--o{ game_promotions
+games ||--o{ game_media
+@enduml

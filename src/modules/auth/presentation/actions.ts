@@ -63,7 +63,7 @@ export async function requestPasswordResetAction(
   }
   return {
     error: null,
-    success: "Nếu tài khoản tồn tại, hướng dẫn khôi phục đã được gửi.",
+    success: "Nếu tài khoản tồn tại, hướng dẫn khôi phục đã được gử.",
   };
 }
 

@@ -1,0 +1,31 @@
+@startuml
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+title Biểu đồ lớp thiết kế module Quản trị\nMức mô hình: Implementation
+class AdminClient <<Client Component>> {
+  + execute(command: AdminCommand): void
+}
+class AdminServerEntry <<Server Action>> {
+  + execute(command: AdminCommand): Promise<ActionResult>
+}
+class AdminApplicationService <<application service>> {
+  + authorize(adminId: String): Promise<void>
+  + execute(adminId: String, command: AdminCommand): Promise<void>
+}
+class UserService <<module API>> { + manageUser(command): Promise<void> }
+class GameService <<module API>> { + manageGame(command): Promise<void> }
+class OrderService <<module API>> { + manageOrder(command): Promise<void> }
+class PromotionService <<module API>> { + managePromotion(command): Promise<void> }
+class ReviewService <<module API>> { + moderateReview(command): Promise<void> }
+
+AdminClient ..> AdminServerEntry : gọi
+AdminServerEntry ..> AdminApplicationService : điều phối
+AdminApplicationService ..> UserService : quản lý người dùng
+AdminApplicationService ..> GameService : quản lý trò chơi
+AdminApplicationService ..> OrderService : quản lý đơn hàng
+AdminApplicationService ..> PromotionService : quản lý khuyến mãi
+AdminApplicationService ..> ReviewService : kiểm duyệt đánh giá
+@enduml

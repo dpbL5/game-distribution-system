@@ -1,0 +1,49 @@
+@startuml
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam ParticipantPadding 18
+skinparam BoxPadding 8
+skinparam maxMessageSize 75
+hide footbox
+autonumber
+actor Customer
+boundary "ReviewForm\n(Client)" as UI
+control "createReviewAction" as Action
+control "ReviewService" as ReviewService
+control "LibraryService" as LibraryService
+entity "ReviewRepository" as Repo
+participant "Prisma" as Prisma
+database "PostgreSQL" as DB
+
+Customer -> UI: Gửi nội dung đánh giá
+UI -> Action: create(gameId, content, recommended)
+Action -> Action: requireAuthenticatedUser()
+Action -> ReviewService: createReview(input)
+ReviewService -> LibraryService: hasGame(userId, gameId)
+LibraryService --> ReviewService: owned?
+alt Chưa sở hữu Game
+  ReviewService --> Action: GAME_NOT_OWNED
+else Đã sở hữu
+  ReviewService -> Repo: findByUserAndGame(userId, gameId)
+  Repo -> Prisma: review.findFirst(...)
+  Prisma -> DB: SELECT review
+  DB --> Prisma: Review | null
+  Prisma --> Repo: Review | null
+  Repo --> ReviewService: Review | null
+  alt Review đã tồn tại
+    ReviewService --> Action: REVIEW_ALREADY_EXISTS
+  else Chưa có Review
+    ReviewService -> ReviewService: validateContent()
+    ReviewService -> Repo: create(reviewData)
+    Repo -> Prisma: review.create(...)
+    Prisma -> DB: INSERT review
+    DB --> Prisma: Review
+    Prisma --> Repo: Review
+    Repo --> ReviewService: Review
+    ReviewService --> Action: success
+  end
+end
+Action --> UI: result
+UI --> Customer: Hiển thị kết quả
+@enduml

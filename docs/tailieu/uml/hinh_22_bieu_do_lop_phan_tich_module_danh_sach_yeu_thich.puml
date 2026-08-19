@@ -1,0 +1,27 @@
+@startuml
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+title Biểu đồ lớp phân tích module Danh sách yêu thích\nMức mô hình: Specification
+class WishlistPage <<boundary>> {
+  + addGame(gameId)
+  + removeGame(gameId)
+  + viewWishlist()
+}
+class WishlistController <<control>> {
+  + getWishlist(userId): Wishlist
+  + addGame(userId, gameId): Wishlist
+  + removeGame(userId, gameId): Wishlist
+}
+class Wishlist <<entity>>
+class WishlistItem <<entity>> { addedAt }
+class Game <<entity>> { name\nisVisible }
+
+WishlistPage ..> WishlistController : gọi
+WishlistController ..> Wishlist : quản lý
+WishlistController ..> Game : kiểm tra / truy vấn
+Wishlist "1" *-- "0..*" WishlistItem : chứa
+WishlistItem "0..*" -- "1" Game : tham chiếu
+@enduml

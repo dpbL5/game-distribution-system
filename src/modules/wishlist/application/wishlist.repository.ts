@@ -6,6 +6,8 @@ export type WishlistItemRecord = {
     name: string;
     slug: string;
     basePrice: string;
+    currentPrice: string;
+    discountPercent: string;
     coverPath: string | null;
     status: "DRAFT" | "PUBLISHED" | "HIDDEN" | "ARCHIVED";
   };

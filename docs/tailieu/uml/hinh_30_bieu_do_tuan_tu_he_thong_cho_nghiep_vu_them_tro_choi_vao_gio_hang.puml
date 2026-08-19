@@ -1,0 +1,11 @@
+@startuml
+actor Customer
+participant "Hệ thống" as System
+Customer -> System : thêm vào giỏ(gameId)
+System -> System : kiểm tra Game, Cart và quyền sở hữu
+alt hợp lệ
+  System --> Customer : cập nhật giỏ hàng
+else không hợp lệ
+  System --> Customer : thông báo lý do từ chối
+end
+@enduml

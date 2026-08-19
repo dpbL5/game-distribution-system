@@ -1,0 +1,59 @@
+@startuml
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam ParticipantPadding 18
+skinparam BoxPadding 8
+skinparam maxMessageSize 75
+hide footbox
+autonumber
+actor Administrator
+boundary "AdminUsersPage\n(Client)" as UI
+control "AdminUserAction" as Action
+control "AuthorizationService" as Authz
+control "AdminUserService" as Service
+entity "UserRepository" as Repo
+participant "Prisma" as Prisma
+database "PostgreSQL" as DB
+
+Administrator -> UI: Tìm kiếm/chọn User
+UI -> Action: getUsers(criteria)
+Action -> Authz: requireAdministrator()
+Authz --> Action: authorized
+Action -> Service: searchUsers(criteria)
+Service -> Repo: search(criteria)
+Repo -> Prisma: user.findMany(...)
+Prisma -> DB: SELECT users
+DB --> Prisma: Users
+Prisma --> Repo: Users
+Repo --> Service: Users
+Service --> Action: UserSummaryDTO[]
+Action --> UI: danh sách User
+UI --> Administrator: Hiển thị tài khoản
+opt Khóa hoặc mở khóa User
+  Administrator -> UI: Chọn thay đổi trạng thái
+  UI -> Action: setAccountStatus(userId, status)
+  Action -> Authz: requireAdministrator()
+  Authz --> Action: authorized
+  Action -> Service: setAccountStatus(userId, status)
+  Service -> Repo: findById(userId)
+  Repo -> Prisma: user.findUnique(...)
+  Prisma -> DB: SELECT user
+  DB --> Prisma: User | null
+  Prisma --> Repo: User | null
+  Repo --> Service: User | null
+  alt Không tìm thấy User
+    Service --> Action: NOT_FOUND
+  else Tìm thấy
+    Service -> Repo: updateStatus(userId, status)
+    Repo -> Prisma: user.update(...)
+    Prisma -> DB: UPDATE user
+    DB --> Prisma: User
+    Prisma --> Repo: User
+    Repo --> Service: User
+    Service --> Action: success
+  end
+  Action --> UI: result
+  UI --> Administrator: Hiển thị trạng thái mới
+end
+@enduml

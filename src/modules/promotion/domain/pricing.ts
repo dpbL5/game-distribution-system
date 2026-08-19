@@ -23,6 +23,8 @@ export function selectActivePromotion(
           left.discountPercent,
         );
         if (!discountDifference.isZero()) return discountDifference.isPositive() ? 1 : -1;
+        // Tie-break by earliest start time, then by stable ascending id so the
+        // result is always deterministic when discount and start coincide.
         const startDifference = left.startsAt.getTime() - right.startsAt.getTime();
         if (startDifference !== 0) return startDifference;
         return left.id < right.id ? -1 : left.id > right.id ? 1 : 0;

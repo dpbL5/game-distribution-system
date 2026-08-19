@@ -1,0 +1,37 @@
+@startuml
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+title Biểu đồ lớp phân tích module Trò chơi\nMức mô hình: Specification
+class StorePage <<boundary>> {
+  + search(filter)
+  + selectGame(gameId)
+}
+class GameDetailPage <<boundary>> {
+  + displayGame(slug)
+}
+class GameController <<control>> {
+  + listGames(filter): Game[*]
+  + getGameDetail(slug): Game
+}
+class Game <<entity>> {
+  name
+  originalPrice
+  releaseDate
+  isVisible
+}
+class Category <<entity>> { name }
+class Developer <<entity>> { name }
+class Publisher <<entity>> { name }
+class GameMedia <<entity>> { type\npath\nsortOrder }
+
+StorePage ..> GameController : gọi
+GameDetailPage ..> GameController : gọi
+GameController ..> Game : truy vấn
+Developer "1" -- "0..*" Game : phát triển
+Publisher "1" -- "0..*" Game : phát hành
+Game "0..*" -- "0..*" Category : phân loại
+Game "1" *-- "0..*" GameMedia : có
+@enduml

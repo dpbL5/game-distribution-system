@@ -1,0 +1,42 @@
+@startuml
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam ParticipantPadding 18
+skinparam BoxPadding 8
+skinparam maxMessageSize 75
+hide footbox
+autonumber
+actor Administrator
+boundary "AdminOrdersPage" as UI
+control "AdminOrderService" as Service
+control "AuthorizationService" as Authz
+entity "OrderRepository" as Repo
+participant "Prisma" as Prisma
+database "PostgreSQL" as DB
+
+Administrator -> UI: Mở quản lý đơn hàng
+UI -> Authz: requireAdministrator()
+Authz --> UI: authorized
+UI -> Service: searchOrders(criteria)
+Service -> Repo: search(criteria)
+Repo -> Prisma: order.findMany(include user/items/payment)
+Prisma -> DB: SELECT orders + relations
+DB --> Prisma: Orders
+Prisma --> Repo: Orders
+Repo --> Service: Orders
+Service --> UI: OrderSummaryDTO[]
+UI --> Administrator: Hiển thị danh sách
+opt Xem chi tiết đơn hàng
+  Administrator -> UI: Chọn orderId
+  UI -> Service: getOrderDetail(orderId)
+  Service -> Repo: findById(orderId)
+  Repo -> Prisma: order.findUnique(...)
+  Prisma -> DB: SELECT order detail
+  DB --> Prisma: Order | null
+  Prisma --> Repo: Order | null
+  Repo --> Service: Order | null
+  Service --> UI: OrderDetailDTO | NOT_FOUND
+  UI --> Administrator: Hiển thị người mua, game, tổng tiền, payment
+end
+@enduml

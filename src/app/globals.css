@@ -275,13 +275,22 @@ h2 {
   overflow: hidden;
   background:
     radial-gradient(90% 70% at 78% 18%, oklch(97.58% 0.0057 264.53 / 0.16), transparent 60%),
-    linear-gradient(135deg, var(--color-cover-deep) 0%, var(--color-cover-violet) 58%, var(--color-cover-plum) 100%);
+    linear-gradient(
+      135deg,
+      var(--color-cover-deep) 0%,
+      var(--color-cover-violet) 58%,
+      var(--color-cover-plum) 100%
+    );
 }
 .hero-art::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(55% 45% at 24% 84%, oklch(78.19% 0.1585 72.33 / 0.16), transparent 62%);
+  background: radial-gradient(
+    55% 45% at 24% 84%,
+    oklch(78.19% 0.1585 72.33 / 0.16),
+    transparent 62%
+  );
   pointer-events: none;
 }
 .game-detail-cover {
@@ -425,6 +434,10 @@ h2 {
   font-family: var(--font-outlier);
   font-weight: 800;
   font-variant-numeric: tabular-nums;
+}
+.price-strike {
+  text-decoration: line-through;
+  font-weight: 400;
 }
 .status-badge {
   display: inline-flex;
@@ -790,6 +803,15 @@ h2 {
   border-radius: var(--radius-pill);
   background: var(--surface-raised);
 }
+.spinner {
+  color: var(--color-muted);
+  animation: spin 900ms linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
 .form-message {
   border: var(--rule-hair) solid var(--border);
   border-radius: var(--radius-input);
@@ -936,6 +958,12 @@ h2 {
   padding-bottom: var(--space-2xs);
   scrollbar-width: thin;
 }
+.admin-nav > div {
+  display: contents;
+}
+.admin-nav-label {
+  display: none;
+}
 .admin-store-link {
   margin-top: 0;
 }
@@ -1001,6 +1029,12 @@ h2 {
     grid-auto-columns: auto;
     overflow-x: visible;
   }
+  .admin-nav > div {
+    display: block;
+  }
+  .admin-nav-label {
+    display: block;
+  }
   .admin-store-link {
     margin-top: auto;
   }
@@ -1051,6 +1085,7 @@ h2 {
   }
   .header-actions > .header-profile-link,
   .header-actions > .header-cart-link,
+  .header-actions > .header-admin-link,
   .header-actions > .header-auth-secondary {
     display: none;
   }

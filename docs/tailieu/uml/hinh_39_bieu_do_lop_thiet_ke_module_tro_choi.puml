@@ -1,0 +1,54 @@
+@startuml
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+title Biểu đồ lớp thiết kế module Trò chơi\nMức mô hình: Implementation
+class GameClient <<Client Component>> {
+  + requestGames(filter: GameFilter): void
+  + submitGameForm(input: GameInput): void
+}
+class GameServerEntry <<Server Action>> {
+  + listGames(filter: GameFilter): Promise<GameCardDto[*]>
+  + saveGame(input: GameInput): Promise<ActionResult>
+}
+class GameService <<service>> {
+  + listGames(filter: GameFilter): Promise<GameCardDto[*]>
+  + getPurchasableGame(gameId: String): Promise<Game>
+  + saveGame(input: GameInput): Promise<GameDto>
+}
+interface IGameRepository <<interface>> {
+  + findById(id: String): Promise<Game?>
+  + search(filter: GameFilter): Promise<Game[*]>
+  + save(data: GameData): Promise<Game>
+}
+class PrismaGameRepository <<repository>> {
+  - prisma: PrismaClient
+  + findById(id: String): Promise<Game?>
+  + search(filter: GameFilter): Promise<Game[*]>
+  + save(data: GameData): Promise<Game>
+}
+interface IMediaStorage <<interface>> {
+  + save(file: File, dir: String): Promise<String>
+  + delete(path: String): Promise<void>
+}
+class LocalMediaStorage <<infrastructure>> {
+  + save(file: File, dir: String): Promise<String>
+  + delete(path: String): Promise<void>
+}
+class PrismaClient <<infrastructure>>
+class Game <<Prisma Model>> { + id: String\n+ slug: String\n+ isVisible: Boolean }
+class GameMedia <<Prisma Model>> { + id: String\n+ gameId: String\n+ type: MediaType\n+ path: String\n+ sortOrder: Int }
+
+GameClient ..> GameServerEntry : gọi
+GameServerEntry ..> GameService : điều phối
+GameService ..> IGameRepository : sử dụng
+GameService ..> IMediaStorage : quản lý media
+PrismaGameRepository ..|> IGameRepository : implements
+LocalMediaStorage ..|> IMediaStorage : implements
+PrismaGameRepository ..> PrismaClient : truy cập
+PrismaGameRepository ..> Game : ánh xạ
+PrismaGameRepository ..> GameMedia : ánh xạ
+Game "1" *-- "0..*" GameMedia : media
+@enduml

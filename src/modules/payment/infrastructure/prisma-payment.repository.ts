@@ -137,6 +137,16 @@ export class PrismaPaymentRepository implements PaymentRepository {
           })),
           skipDuplicates: true,
         });
+        // Clear purchased games from the user's active cart so checkout does
+        // not fail with GAME_ALREADY_OWNED on the next attempt. This runs in the
+        // same transaction as ownership creation, satisfying the invariant in
+        // AGENTS.md §10 that cart updates accompany LibraryItem creation.
+        const purchasedGameIds = order.items.map((item) => item.gameId);
+        if (purchasedGameIds.length > 0) {
+          await transaction.cartItem.deleteMany({
+            where: { gameId: { in: purchasedGameIds }, cart: { userId: order.userId, status: "ACTIVE" } },
+          });
+        }
       }
       return toPayment(updatedPayment);
     });

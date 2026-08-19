@@ -1,0 +1,53 @@
+@startuml
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+title Biểu đồ lớp thiết kế module Danh sách yêu thích\nMức mô hình: Implementation
+class WishlistClient <<Client Component>> {
+  + addGame(gameId: String): void
+  + removeGame(gameId: String): void
+}
+class WishlistServerEntry <<Server Action>> {
+  + addGame(gameId: String): Promise<ActionResult>
+  + removeGame(gameId: String): Promise<ActionResult>
+  + getWishlist(): Promise<WishlistDto>
+}
+class WishlistService <<service>> {
+  + addGame(userId: String, gameId: String): Promise<WishlistDto>
+  + removeGame(userId: String, gameId: String): Promise<WishlistDto>
+}
+interface IWishlistRepository <<interface>> {
+  + findByUserId(userId: String): Promise<Wishlist?>
+  + hasGame(userId: String, gameId: String): Promise<Boolean>
+  + addGame(userId: String, gameId: String): Promise<WishlistItem>
+  + removeGame(userId: String, gameId: String): Promise<void>
+}
+class PrismaWishlistRepository <<repository>> { - prisma: PrismaClient }
+class GameService <<module API>> {
+  + getVisibleGame(gameId: String): Promise<GameDto>
+}
+class PrismaClient <<infrastructure>>
+class Wishlist <<Prisma Model>> {
+  + id: String
+  + userId: String
+  + createdAt: DateTime
+}
+class WishlistItem <<Prisma Model>> {
+  + id: String
+  + wishlistId: String
+  + gameId: String
+  + addedAt: DateTime
+}
+
+WishlistClient ..> WishlistServerEntry : gọi
+WishlistServerEntry ..> WishlistService : điều phối
+WishlistService ..> IWishlistRepository : sử dụng
+WishlistService ..> GameService : kiểm tra trò chơi
+PrismaWishlistRepository ..|> IWishlistRepository : implements
+PrismaWishlistRepository ..> PrismaClient : truy cập
+PrismaWishlistRepository ..> Wishlist : ánh xạ
+PrismaWishlistRepository ..> WishlistItem : ánh xạ
+Wishlist "1" *-- "0..*" WishlistItem : chứa
+@enduml

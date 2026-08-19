@@ -1,0 +1,48 @@
+@startuml
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam ParticipantPadding 18
+skinparam BoxPadding 8
+skinparam maxMessageSize 75
+hide footbox
+autonumber
+actor Administrator
+boundary "AdminPromotionForm\n(Client)" as UI
+control "savePromotionAction" as Action
+control "AuthorizationService" as Authz
+control "PromotionService" as Service
+control "GameService" as GameService
+entity "PromotionRepository" as Repo
+participant "Prisma" as Prisma
+database "PostgreSQL" as DB
+
+Administrator -> UI: Tạo/sửa/ngừng Promotion
+UI -> Action: savePromotion(input, gameIds)
+Action -> Authz: requireAdministrator()
+Authz --> Action: authorized
+Action -> Service: savePromotion(input, gameIds)
+Service -> Service: validate(end > start, discount hợp lệ)
+Service -> GameService: validateGames(gameIds)
+GameService --> Service: valid / error
+Service -> Repo: checkOverlaps(gameIds, interval)
+Repo -> Prisma: gamePromotion.findMany(...)
+Prisma -> DB: SELECT active promotions
+DB --> Prisma: Kết quả
+Prisma --> Repo: Kết quả
+Repo --> Service: overlap info
+Service -> Service: applyPromotionOverlapRule()
+alt Dữ liệu không hợp lệ
+  Service --> Action: VALIDATION_ERROR
+else Hợp lệ
+  Service -> Repo: savePromotionWithGames(...)
+  Repo -> Prisma: $transaction(promotion, gamePromotion)
+  Prisma -> DB: BEGIN / INSERT-UPDATE / COMMIT
+  DB --> Prisma: Promotion
+  Prisma --> Repo: Promotion
+  Repo --> Service: Promotion
+  Service --> Action: success
+end
+Action --> UI: result
+UI --> Administrator: Hiển thị kết quả
+@enduml

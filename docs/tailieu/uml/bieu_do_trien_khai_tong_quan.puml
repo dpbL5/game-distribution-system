@@ -1,0 +1,107 @@
+@startuml
+!theme plain
+left to right direction
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam node {
+  BackgroundColor #F8FAFC
+  BorderColor #315A8A
+}
+skinparam database {
+  BackgroundColor #FFFDF7
+  BorderColor #8A6D3B
+}
+ 
+node "Thiết bị người cao tuổi" as PatientDevice {
+  artifact "Mobile App\nPatient" as PatientApp
+}
+ 
+node "Thiết bị người chăm sóc" as CaregiverDevice {
+  artifact "Mobile App\nCaregiver" as CaregiverApp
+}
+ 
+node "Máy tính bác sĩ / quản trị" as WebDevice {
+  artifact "Web Browser" as Browser
+}
+ 
+cloud "Hạ tầng ứng dụng" as Cloud {
+  node "Web Frontend" as WebFrontend {
+    artifact "Doctor Portal" as DoctorPortal
+    artifact "Admin Portal" as AdminPortal
+  }
+ 
+  node "Application Server" as AppServer {
+    component "Backend API" as API
+    component "Xác thực &\nPhân quyền" as Auth
+    component "Care Management" as Care
+    component "Health Monitoring\n& Rule Engine" as Health
+    component "Medication Service" as Medication
+    component "Appointment &\nClinical Service" as Clinical
+    component "Notification\nOrchestrator" as Notification
+    component "AI / RAG\nOrchestrator" as AIOrchestrator
+    component "Integration\nAdapters" as Adapters
+  }
+ 
+  node "Background Processing" as WorkerNode {
+    component "Scheduler / Worker" as Worker
+  }
+ 
+  database "PostgreSQL\n+ vector extension" as DB
+  database "Redis\nCache / Queue" as Redis
+  folder "Object Storage\nTệp & tài liệu" as Storage
+}
+ 
+cloud "Dịch vụ bên ngoài" as External {
+  node "Push Provider\nFCM / APNs" as PushProvider
+  node "LLM / AI Provider" as LLMProvider
+  node "Hệ thống bệnh viện\n(HIS / LIS / PACS)" as HospitalSystems
+  node "Dịch vụ nhà thuốc" as PharmacySystem
+}
+ 
+PatientApp --> API : HTTPS / REST
+CaregiverApp --> API : HTTPS / REST
+Browser --> DoctorPortal : HTTPS
+Browser --> AdminPortal : HTTPS
+DoctorPortal --> API : HTTPS / REST
+AdminPortal --> API : HTTPS / REST
+ 
+API --> Auth
+API --> Care
+API --> Health
+API --> Medication
+API --> Clinical
+API --> Notification
+API --> AIOrchestrator
+API --> Adapters
+ 
+Care --> DB
+Health --> DB
+Medication --> DB
+Clinical --> DB
+Auth --> DB
+AIOrchestrator --> DB : truy xuất dữ liệu / vector
+API --> Storage
+ 
+Health --> Redis : sự kiện
+Medication --> Redis : lịch nhắc
+Clinical --> Redis : tác vụ nền
+Worker --> Redis : consume jobs
+Worker --> DB
+Worker --> Notification
+ 
+Notification --> PushProvider : Push API
+PushProvider --> PatientApp : thông báo
+PushProvider --> CaregiverApp : thông báo
+AIOrchestrator --> LLMProvider : API có kiểm soát
+Adapters --> HospitalSystems : API / Mock Adapter
+Adapters --> PharmacySystem : API / Mock Adapter
+ 
+note bottom of HospitalSystems
+  Trong phạm vi đồ án có thể mô phỏng bằng mock service.
+end note
+ 
+note bottom of AIOrchestrator
+  LLM không trực tiếp quyết định cảnh báo an toàn;
+  Rule Engine chịu trách nhiệm phát hiện sự kiện chính.
+end note
+@enduml

@@ -1,0 +1,31 @@
+@startuml
+actor Customer
+participant PaymentClient
+participant PaymentServerEntry
+participant PaymentService
+participant PaymentRepository
+participant PaymentGatewayAdapter
+participant OrderService
+participant LibraryService
+participant Prisma
+database PostgreSQL
+actor "Cổng thanh toán" as Gateway
+Customer -> PaymentClient : thanh toán Order
+PaymentClient -> PaymentServerEntry : pay(orderId)
+PaymentServerEntry -> PaymentService : processPayment()
+PaymentService -> PaymentGatewayAdapter : requestPayment()
+PaymentGatewayAdapter -> Gateway : thanh toán
+Gateway --> PaymentGatewayAdapter : success/fail
+PaymentGatewayAdapter --> PaymentService : kết quả
+alt thành công
+  PaymentService -> Prisma : transaction cập nhật dữ liệu
+  Prisma -> PostgreSQL : UPDATE Payment/Order
+  PaymentService -> LibraryService : grantOwnership()
+  LibraryService -> Prisma : create LibraryItem
+  Prisma -> PostgreSQL : INSERT
+  PaymentService --> PaymentClient : thành công
+else thất bại
+  PaymentService -> PaymentRepository : lưu trạng thái thất bại
+  PaymentService --> PaymentClient : thất bại
+end
+@enduml

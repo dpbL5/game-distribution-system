@@ -1,0 +1,45 @@
+@startuml
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam ParticipantPadding 18
+skinparam BoxPadding 8
+skinparam maxMessageSize 75
+hide footbox
+autonumber
+actor Guest
+boundary "RegisterForm\n(Client)" as UI
+control "registerAction\n(Server Action)" as Action
+control "AuthService" as Auth
+entity "UserRepository" as Repo
+control "PasswordService" as Password
+participant "Prisma" as Prisma
+database "PostgreSQL" as DB
+
+Guest -> UI: Nhập username, email, mật khẩu
+UI -> Action: submit(input)
+Action -> Auth: register(input)
+Auth -> Auth: validateInput()
+Auth -> Repo: findByUsernameOrEmail()
+Repo -> Prisma: user.findFirst(...)
+Prisma -> DB: SELECT user
+DB --> Prisma: Kết quả
+Prisma --> Repo: User | null
+Repo --> Auth: User | null
+alt Username hoặc email đã tồn tại
+  Auth --> Action: lỗi DUPLICATE_ACCOUNT
+  Action --> UI: Hiển thị lỗi
+else Dữ liệu hợp lệ
+  Auth -> Password: hash(password)
+  Password --> Auth: passwordHash
+  Auth -> Repo: create(userData, passwordHash)
+  Repo -> Prisma: user.create(...)
+  Prisma -> DB: INSERT user
+  DB --> Prisma: User mới
+  Prisma --> Repo: User
+  Repo --> Auth: User
+  Auth --> Action: đăng ký thành công
+  Action --> UI: success
+  UI --> Guest: Thông báo thành công
+end
+@enduml

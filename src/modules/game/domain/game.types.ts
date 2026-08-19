@@ -30,4 +30,5 @@ export type PublishedGameDetail = PublishedGameSummary & {
     isRecommended: boolean;
     createdAt: Date;
   }>;
+
 };

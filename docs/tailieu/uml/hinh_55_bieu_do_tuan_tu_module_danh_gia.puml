@@ -1,0 +1,23 @@
+@startuml
+actor Customer
+participant ReviewClient
+participant ReviewServerEntry
+participant ReviewService
+participant LibraryService
+participant ReviewRepository
+participant Prisma
+database PostgreSQL
+Customer -> ReviewClient : gửi đánh giá
+ReviewClient -> ReviewServerEntry : createReview(gameId, content)
+ReviewServerEntry -> ReviewService : create(userId, gameId, content)
+ReviewService -> LibraryService : hasOwnership()
+LibraryService --> ReviewService : true
+ReviewService -> ReviewRepository : exists(userId, gameId)
+ReviewRepository --> ReviewService : false
+ReviewService -> ReviewRepository : create()
+ReviewRepository -> Prisma : create
+Prisma -> PostgreSQL : INSERT
+PostgreSQL --> Prisma : OK
+Prisma --> ReviewRepository : Review
+ReviewRepository --> ReviewClient : kết quả
+@enduml

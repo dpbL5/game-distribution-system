@@ -3,6 +3,10 @@ import "server-only";
 import { Prisma } from "@prisma/client";
 
 import { prisma } from "@/infrastructure/database/prisma";
+import {
+  calculateCurrentPrice,
+  selectActivePromotion,
+} from "@/modules/promotion";
 import type {
   WishlistItemRecord,
   WishlistRepository,
@@ -16,6 +20,13 @@ const gameSelect = {
   basePrice: true,
   coverPath: true,
   status: true,
+  promotionLinks: {
+    select: {
+      promotion: {
+        select: { id: true, discountPercent: true, startsAt: true, endsAt: true, status: true },
+      },
+    },
+  },
 } as const;
 
 function toGameRecord(game: {
@@ -25,12 +36,33 @@ function toGameRecord(game: {
   basePrice: Prisma.Decimal;
   coverPath: string | null;
   status: string;
+  promotionLinks: Array<{
+    promotion: {
+      id: string;
+      discountPercent: Prisma.Decimal;
+      startsAt: Date;
+      endsAt: Date;
+      status: string;
+    };
+  }>;
 }): WishlistItemRecord["game"] {
+  const promotion = selectActivePromotion(
+    game.promotionLinks.map(({ promotion }) => ({
+      id: promotion.id,
+      discountPercent: promotion.discountPercent.toFixed(2),
+      startsAt: promotion.startsAt,
+      endsAt: promotion.endsAt,
+      status: promotion.status as "DRAFT" | "ACTIVE" | "STOPPED",
+    })),
+  );
+  const price = calculateCurrentPrice(game.basePrice.toFixed(2), promotion);
   return {
     id: game.id,
     name: game.name,
     slug: game.slug,
-    basePrice: game.basePrice.toFixed(2),
+    basePrice: price.basePrice,
+    currentPrice: price.price,
+    discountPercent: price.discountPercent,
     coverPath: game.coverPath,
     status: game.status as WishlistItemRecord["game"]["status"],
   };

@@ -1,0 +1,39 @@
+@startuml
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+title Biểu đồ lớp phân tích module Quản trị\nMức mô hình: Specification
+class AdminPage <<boundary>> {
+  + manageGames()
+  + manageUsers()
+  + manageOrders()
+  + managePromotions()
+  + moderateReviews()
+}
+class AdminController <<control>> {
+  + authorizeAdmin(userId): Boolean
+  + manageGame(command)
+  + manageUser(command)
+  + manageOrder(command)
+  + managePromotion(command)
+  + moderateReview(command)
+}
+class User <<entity>> { role\nstatus }
+class Game <<entity>> { name\nisVisible }
+class Order <<entity>> { status\ntotalAmount }
+class Promotion <<entity>> { status }
+class Review <<entity>> { isVisible }
+
+AdminPage ..> AdminController : gọi
+AdminController ..> User : quản lý / phân quyền
+AdminController ..> Game : quản lý
+AdminController ..> Order : quản lý
+AdminController ..> Promotion : quản lý
+AdminController ..> Review : kiểm duyệt
+User "1" -- "0..*" Order : đặt
+User "1" -- "0..*" Review : viết
+Review "0..*" -- "1" Game : đánh giá
+User "1" -- "0..*" Promotion : tạo {role = Administrator}
+@enduml

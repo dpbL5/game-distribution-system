@@ -1,0 +1,61 @@
+@startuml
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam ParticipantPadding 18
+skinparam BoxPadding 8
+skinparam maxMessageSize 75
+hide footbox
+autonumber
+actor Administrator
+boundary "AdminGameForm\n(Client)" as UI
+control "saveGameAction" as Action
+control "GameService" as Service
+control "AuthorizationService" as Authz
+entity "GameRepository" as Repo
+control "MediaStorageService" as Storage
+participant "LocalMediaStorage" as LocalStorage
+participant "Prisma" as Prisma
+database "PostgreSQL" as DB
+collections "Filesystem" as FS
+
+Administrator -> UI: Tạo mới / chỉnh sửa Game
+UI -> Action: saveGame(input, mediaFiles)
+Action -> Authz: requireAdministrator()
+Authz --> Action: authorized
+Action -> Service: saveGame(input, mediaFiles)
+Service -> Service: validateGameDataAndRelations()
+opt Có media mới
+  loop Mỗi file media
+    Service -> Storage: save(file, gameDirectory)
+    Storage -> LocalStorage: save(...)
+    LocalStorage -> FS: write file
+    FS --> LocalStorage: path
+    LocalStorage --> Storage: path
+    Storage --> Service: storedMedia
+  end
+end
+Service -> Repo: saveGameWithRelations(input, mediaMetadata)
+Repo -> Prisma: $transaction(...)
+Prisma -> DB: BEGIN
+Prisma -> DB: INSERT/UPDATE Game + relations + metadata
+alt Ghi DB thất bại
+  DB --> Prisma: error / ROLLBACK
+  Prisma --> Repo: error
+  Repo --> Service: error
+  opt Có file mới đã lưu
+    Service -> Storage: delete(newMediaPaths)
+    Storage -> LocalStorage: delete(...)
+    LocalStorage -> FS: unlink files
+  end
+  Service --> Action: SAVE_FAILED
+else Thành công
+  Prisma -> DB: COMMIT
+  DB --> Prisma: Game
+  Prisma --> Repo: Game
+  Repo --> Service: Game
+  Service --> Action: GameDTO
+end
+Action --> UI: result
+UI --> Administrator: Hiển thị kết quả
+@enduml

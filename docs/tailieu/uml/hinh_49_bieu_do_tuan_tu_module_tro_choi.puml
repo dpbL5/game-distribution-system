@@ -1,0 +1,20 @@
+@startuml
+actor User
+participant GameClient
+participant GameServerEntry
+participant GameService
+participant GameRepository
+participant Prisma
+database PostgreSQL
+User -> GameClient : mở chi tiết trò chơi
+GameClient -> GameServerEntry : getGame(slug)
+GameServerEntry -> GameService : getVisibleGame()
+GameService -> GameRepository : findBySlug()
+GameRepository -> Prisma : query
+Prisma -> PostgreSQL : SELECT
+PostgreSQL --> Prisma : dữ liệu Game
+Prisma --> GameRepository : Game
+GameRepository --> GameService : Game
+GameService --> GameServerEntry : dữ liệu hiển thị
+GameServerEntry --> GameClient : kết quả
+@enduml

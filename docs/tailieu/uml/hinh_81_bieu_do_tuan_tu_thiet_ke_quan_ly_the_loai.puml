@@ -1,0 +1,44 @@
+@startuml
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam ParticipantPadding 18
+skinparam BoxPadding 8
+skinparam maxMessageSize 75
+hide footbox
+autonumber
+actor Administrator
+boundary "AdminCategoryForm\n(Client)" as UI
+control "saveCategoryAction" as Action
+control "AuthorizationService" as Authz
+control "CategoryService" as Service
+entity "CategoryRepository" as Repo
+participant "Prisma" as Prisma
+database "PostgreSQL" as DB
+
+Administrator -> UI: Tạo/sửa/ẩn Category
+UI -> Action: save(command)
+Action -> Authz: requireAdministrator()
+Authz --> Action: authorized
+Action -> Service: execute(command)
+Service -> Service: validate(name, description, state)
+Service -> Repo: findByName(name)
+Repo -> Prisma: category.findFirst(...)
+Prisma -> DB: SELECT category
+DB --> Prisma: Category | null
+Prisma --> Repo: Category | null
+Repo --> Service: Category | null
+alt Tên Category bị trùng không hợp lệ
+  Service --> Action: DUPLICATE_CATEGORY
+else Hợp lệ
+  Service -> Repo: create/update/hide(command)
+  Repo -> Prisma: category.create/update(...)
+  Prisma -> DB: INSERT/UPDATE category
+  DB --> Prisma: Category
+  Prisma --> Repo: Category
+  Repo --> Service: Category
+  Service --> Action: success
+end
+Action --> UI: result
+UI --> Administrator: Hiển thị kết quả
+@enduml

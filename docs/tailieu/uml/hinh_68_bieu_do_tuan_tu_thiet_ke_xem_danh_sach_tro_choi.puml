@@ -1,0 +1,37 @@
+@startuml
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam ParticipantPadding 18
+skinparam BoxPadding 8
+skinparam maxMessageSize 75
+hide footbox
+autonumber
+actor User
+boundary "StorePage\n(Server/Client UI)" as UI
+control "GameQueryService" as GameService
+entity "GameRepository" as GameRepo
+control "PromotionService" as PromoService
+entity "PromotionRepository" as PromoRepo
+participant "Prisma" as Prisma
+database "PostgreSQL" as DB
+
+User -> UI: Mở cửa hàng
+UI -> GameService: getVisibleGames(page)
+GameService -> GameRepo: findVisible(page)
+GameRepo -> Prisma: game.findMany(visible=true)
+Prisma -> DB: SELECT games
+DB --> Prisma: Danh sách Game
+Prisma --> GameRepo: Games
+GameRepo --> GameService: Games
+GameService -> PromoService: resolveDisplayPrices(gameIds)
+PromoService -> PromoRepo: findActiveByGameIds(gameIds)
+PromoRepo -> Prisma: promotion.findMany(...)
+Prisma -> DB: SELECT promotions
+DB --> Prisma: Promotions
+Prisma --> PromoRepo: Promotions
+PromoRepo --> PromoService: Promotions
+PromoService --> GameService: Giá hiển thị
+GameService --> UI: GameCardDTO[]
+UI --> User: Hiển thị danh sách trò chơi
+@enduml

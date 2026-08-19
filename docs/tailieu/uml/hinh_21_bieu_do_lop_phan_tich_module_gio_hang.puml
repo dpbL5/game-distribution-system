@@ -1,0 +1,30 @@
+@startuml
+left to right direction
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+title Biểu đồ lớp phân tích module Giỏ hàng\nMức mô hình: Specification
+class CartPage <<boundary>> {
+  + addGame(gameId)
+  + removeGame(gameId)
+  + viewCart()
+}
+class CartController <<control>> {
+  + getCart(userId): Cart
+  + addGame(userId, gameId): Cart
+  + removeGame(userId, gameId): Cart
+}
+class Cart <<entity>>
+class CartItem <<entity>> { addedAt }
+class Game <<entity>> { name\nisVisible\noriginalPrice }
+class LibraryItem <<entity>> { purchasedAt\nstatus }
+
+CartPage ..> CartController : gọi
+CartController ..> Cart : quản lý
+CartController ..> Game : kiểm tra khả dụng
+CartController ..> LibraryItem : kiểm tra sở hữu
+Cart "1" *-- "0..*" CartItem : chứa
+CartItem "0..*" -- "1" Game : tham chiếu
+LibraryItem "0..*" -- "1" Game : cấp quyền với
+@enduml

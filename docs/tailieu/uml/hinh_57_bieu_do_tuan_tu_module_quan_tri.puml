@@ -1,0 +1,21 @@
+@startuml
+actor Administrator
+participant AdminClient
+participant AdminServerEntry
+participant AdminApplicationService
+participant GameService
+participant UserService
+participant OrderService
+Administrator -> AdminClient : chọn chức năng quản trị
+AdminClient -> AdminServerEntry : request
+AdminServerEntry -> AdminApplicationService : execute()
+AdminApplicationService -> AdminApplicationService : kiểm tra quyền Admin
+alt quản lý trò chơi
+  AdminApplicationService -> GameService : thao tác Game
+else quản lý người dùng
+  AdminApplicationService -> UserService : thao tác User
+else quản lý đơn hàng
+  AdminApplicationService -> OrderService : truy vấn Order
+end
+AdminApplicationService --> AdminClient : kết quả
+@enduml
