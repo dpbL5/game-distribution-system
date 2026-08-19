@@ -58,8 +58,13 @@ const mobileLinks = {
   ],
 } as const;
 
-type LinkGroup = typeof desktopLinks.CUSTOMER;
-type MobileGroup = typeof mobileLinks.CUSTOMER;
+type NavLink = {
+  href: string;
+  label: string;
+  icon: typeof Gamepad2;
+};
+type LinkGroup = readonly NavLink[];
+type MobileGroup = readonly NavLink[];
 
 function isActivePath(pathname: string, href: string) {
   return href === "/" ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);

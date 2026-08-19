@@ -2,10 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { orderService } from "@/modules/order/infrastructure/order-service";
-import {
-  completeMockPaymentAction,
-  startPaymentAction,
-} from "@/modules/payment/presentation/actions";
+import { startPaymentAction } from "@/modules/payment/presentation/actions";
 import { StatusBadge } from "@/shared/ui/status-badge";
 import { formatMoney } from "@/shared/utils/format-money";
 
@@ -31,7 +28,11 @@ export default async function CheckoutResultPage({
         </div>
         {order.status === "PENDING_PAYMENT" ? (
           <>
-            <StatusBadge tone="info">Đang chờ thanh toán</StatusBadge>
+            <StatusBadge tone="warning">Chờ admin xác nhận</StatusBadge>
+            <p className="muted small">
+              Đơn hàng đang chờ admin duyệt (mock gateway). Hãy bấm “Bắt đầu thanh toán” để tạo yêu
+              cầu chờ duyệt, sau đó admin sẽ xác nhận tại <code>/admin/orders</code>.
+            </p>
             <form className="stack" action={startPaymentAction}>
               <input type="hidden" name="orderId" value={order.id} />
               <input type="hidden" name="method" value="mock" />
@@ -40,17 +41,19 @@ export default async function CheckoutResultPage({
                 Bắt đầu thanh toán
               </button>
             </form>
-            <form action={completeMockPaymentAction}>
-              <input type="hidden" name="orderId" value={order.id} />
-              <button className="button button-secondary" type="submit">
-                Hoàn tất thanh toán thử nghiệm
-              </button>
-            </form>
+            <p className="muted small">
+              Sau khi thanh toán được khởi tạo, game sẽ xuất hiện trong thư viện khi admin duyệt.
+            </p>
           </>
         ) : order.status === "PAID" ? (
           <>
             <StatusBadge tone="success">Thanh toán thành công</StatusBadge>
-            <p className="muted">Game đã có trong thư viện của bạn.</p>
+            <p className="muted">Admin đã duyệt — game đã có trong thư viện của bạn.</p>
+          </>
+        ) : order.status === "PAYMENT_FAILED" ? (
+          <>
+            <StatusBadge tone="danger">Thanh toán bị từ chối</StatusBadge>
+            <p className="muted small">Admin đã từ chối duyệt hóa đơn này. Vui lòng liên hệ hỗ trợ.</p>
           </>
         ) : (
           <StatusBadge tone="danger">Thanh toán chưa hoàn tất</StatusBadge>
